@@ -1,0 +1,131 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.hero {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: white;
+  padding: 4rem 2rem 6rem;
+  text-align: left;
+}
+
+.heroContent {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.backLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  transition: color 0.2s;
+}
+
+.backLink:hover {
+  color: white;
+}
+
+.categoryBadge {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.title {
+  font-size: 2.5rem;
+  line-height: 1.2;
+  font-weight: 800;
+  margin: 0;
+}
+
+.date {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.contentWrapper {
+  max-width: 800px;
+  margin: -4rem auto 4rem;
+  padding: 0 2rem;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+}
+
+.imageContainer {
+  width: 100%;
+  margin-bottom: 2rem;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  background: white;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem;
+}
+
+.coverImage {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: cover;
+  border-radius: calc(var(--radius) - 4px);
+  display: block;
+}
+
+.articleBody {
+  background: var(--card-bg);
+  padding: 3rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+}
+
+.paragraph {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+}
+
+.paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.loadingState {
+  text-align: center;
+  padding: 10rem 2rem;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 3rem 1.5rem 5rem;
+  }
+  .title {
+    font-size: 2rem;
+  }
+  .contentWrapper {
+    padding: 0 1rem;
+    margin-top: -3rem;
+  }
+  .articleBody {
+    padding: 2rem 1.5rem;
+  }
+}

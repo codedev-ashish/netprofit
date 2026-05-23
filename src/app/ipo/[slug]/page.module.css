@@ -1,0 +1,245 @@
+.container {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: white;
+  padding: 4rem 2rem;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.heroContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.titleWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.title {
+  font-size: 2.5rem;
+  line-height: 1.2;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+}
+
+.symbol {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.badgeGroup {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.badge {
+  padding: 0.35rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.statusUpcoming { background: rgba(2, 132, 199, 0.2); color: #bae6fd; border-color: #38bdf8; }
+.statusActive { background: rgba(22, 163, 74, 0.2); color: #bbf7d0; border-color: #4ade80; }
+.statusClosed { background: rgba(71, 85, 105, 0.2); color: #e2e8f0; border-color: #94a3b8; }
+
+.contentWrapper {
+  max-width: 1200px;
+  margin: -2rem auto 4rem;
+  padding: 0 2rem;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  position: relative;
+  z-index: 20;
+}
+
+.mainColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.sectionCard {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #60a5fa;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--bg-secondary);
+  padding-bottom: 0.75rem;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detailLabel {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.detailValue {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.timelineItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+.timelineItem:last-child {
+  border-bottom: none;
+}
+
+.timelineLabel {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.timelineDate {
+  color: var(--text-muted);
+}
+
+.gmpBox {
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.gmpValue {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--accent-color);
+  line-height: 1;
+}
+
+.gmpLabel {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.applyCard {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  border: 2px solid var(--primary-color);
+  box-shadow: var(--shadow-lg);
+  padding: 2rem;
+  text-align: center;
+}
+
+.applyTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.applyBtn {
+  display: inline-block;
+  width: 100%;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.applyBtn:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(229, 96, 0, 0.3);
+}
+
+.prosConsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.prosConsList li {
+  position: relative;
+  padding-left: 1.5rem;
+  color: var(--text-color);
+}
+
+.prosConsList li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #16a34a;
+  font-weight: bold;
+}
+
+.consList li::before {
+  content: "×";
+  color: #dc2626;
+}
+
+@media (max-width: 900px) {
+  .contentWrapper {
+    grid-template-columns: 1fr;
+    margin-top: 2rem;
+  }
+}
