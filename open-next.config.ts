@@ -2,11 +2,25 @@ import defaultTemplate from "@opennextjs/cloudflare/templates/default";
 
 const config = {
   default: {
-    runtime: "edge",
-    plugins: ["@opennextjs/cloudflare/plugins/kv-cache"],
+    override: {
+      wrapper: "cloudflare-node",
+      converter: "edge",
+      proxyExternalRequest: "fetch",
+      incrementalCache: "dummy",
+      tagCache: "dummy",
+      queue: "dummy",
+    },
   },
   middleware: {
-    runtime: "edge",
+    external: true,
+    override: {
+      wrapper: "cloudflare-edge",
+      converter: "edge",
+      proxyExternalRequest: "fetch",
+      incrementalCache: "dummy",
+      tagCache: "dummy",
+      queue: "dummy",
+    },
   },
 };
 
