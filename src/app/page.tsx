@@ -11,8 +11,11 @@ export default function Home() {
             File ITR, register your company and manage GST compliance with expert CAs at NetProfit. Trusted by 12,000+ founders across India.
           </p>
           <div className={styles.ctaGroup}>
-            <Link href="/services/company-registration" className={`btn btn-secondary ${styles.heroBtn}`}>
-              Register Company
+            <Link href="/auth?mode=register" className={`btn btn-primary ${styles.heroBtn}`}>
+              Registration
+            </Link>
+            <Link href="/auth?mode=login" className={`btn btn-secondary ${styles.heroBtn}`}>
+              Login
             </Link>
           </div>
           <div className={styles.trustBadges}>

@@ -10,6 +10,9 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -49,8 +52,21 @@ export default function AuthPage() {
         <p>{isLogin ? "Sign in to manage your services." : "Join us to buy and manage services."}</p>
         
         <form onSubmit={handleSubmit} className={styles.form}>
+          {!isLogin && (
+            <div className={styles.inputGroup}>
+              <label htmlFor="name">Name</label>
+              <input 
+                type="text" 
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required={!isLogin}
+                className={styles.inputField} 
+              />
+            </div>
+          )}
           <div className={styles.inputGroup}>
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">Email Id</label>
             <input 
               type="email" 
               id="email"
@@ -71,6 +87,32 @@ export default function AuthPage() {
               className={styles.inputField} 
             />
           </div>
+          {!isLogin && (
+            <>
+              <div className={styles.inputGroup}>
+                <label htmlFor="city">City</label>
+                <input 
+                  type="text" 
+                  id="city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  required={!isLogin}
+                  className={styles.inputField} 
+                />
+              </div>
+              <div className={styles.inputGroup}>
+                <label htmlFor="state">State</label>
+                <input 
+                  type="text" 
+                  id="state"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  required={!isLogin}
+                  className={styles.inputField} 
+                />
+              </div>
+            </>
+          )}
           
           {error && <div className={styles.error}>{error}</div>}
           
