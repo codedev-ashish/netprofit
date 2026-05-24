@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx @opennextjs/cloudflare build",
+    "build": "open-next-cloudflare",
     "start": "next start",
     "lint": "eslint",
-    "build:cloudflare": "npx @opennextjs/cloudflare build",
-    "deploy:cloudflare": "npx @opennextjs/cloudflare build && wrangler deploy"
+    "build:cloudflare": "open-next-cloudflare",
+    "deploy:cloudflare": "open-next-cloudflare && wrangler deploy"
   },
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",
