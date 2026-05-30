@@ -15,6 +15,19 @@ export interface GMPTrend {
   change: number;
 }
 
+export interface CustomField {
+  id: string;
+  name: string;
+  value: string;
+  type?: 'text' | 'number' | 'date' | 'url';
+}
+
+export interface CustomTab {
+  id: string;
+  name: string;
+  fields: CustomField[];
+}
+
 export enum IPOStatus {
   UPCOMING = 'Upcoming',
   OPEN = 'Open',
@@ -128,6 +141,7 @@ export interface IPOData {
   pros?: string[];
   cons?: string[];
   affiliateLink?: string;
+  customTabs?: CustomTab[];
 }
 
 export const DEFAULT_IPO_TEMPLATE: IPOData = {
@@ -170,5 +184,6 @@ export const DEFAULT_IPO_TEMPLATE: IPOData = {
   registrar: { name: '', phone: '', email: '', website: '' },
   leadManagers: [],
   contact: { address: '', phone: '', email: '', website: '' },
-  affiliateLink: ''
+  affiliateLink: '',
+  customTabs: []
 };

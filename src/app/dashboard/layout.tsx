@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, Settings, LogOut, Building2, MessageSquare, Flag, UserCog } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Settings, LogOut, Building2, MessageSquare, Flag, UserCog, Newspaper } from "lucide-react";
 import styles from "./layout.module.css";
 import { auth, db } from "../../lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -102,6 +102,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         >
           <UserCog size={20} />
           <span>Settings</span>
+        </Link>
+
+        <Link 
+          href="/dashboard/news" 
+          className={`${styles.navItem} ${pathname?.startsWith('/dashboard/news') ? styles.activeNavItem : ''}`}
+        >
+          <Newspaper size={20} />
+          <span>News</span>
         </Link>
 
       </aside>

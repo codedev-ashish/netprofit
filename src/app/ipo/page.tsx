@@ -55,6 +55,9 @@ export default function IPOPage() {
   };
 
   const filteredIpos = ipos.filter(ipo => {
+    // Check if the IPO is explicitly marked as not visible
+    if ((ipo as any).isVisible === false) return false;
+    
     if (activeTab === "All") return true;
     return ipo.type?.toLowerCase() === activeTab.toLowerCase();
   });

@@ -1,78 +1,100 @@
-# Example queries for a simple movie app.
+# Example queries for the online services platform
 
-# @auth() directives control who can call each operation.
-# Anyone should be able to list all movies, so the auth level is set to PUBLIC
-query ListMovies @auth(level: PUBLIC, insecureReason: "Anyone can list all movies.") {
-  movies {
+# Get all businesses for the logged-in user
+query GetUserBusinesses @auth(level: USER) {
+  businesses(where: { userId: { eq_expr: "auth.uid" } }) {
     id
+    name
+    gstin
+    pan
+    createdAt
+  }
+}
+
+# Get available services and their plans
+query GetAvailableServices @auth(level: PUBLIC, insecureReason: "Services catalog is public") {
+  services {
+    id
+    slug
     title
+    description
+    price
     imageUrl
-    genre
+    isActive
+    plans: servicePlans_on_service {
+      id
+      planType
+      periodTaggingType
+      price
+      isActive
+    }
   }
 }
 
-# List all users, only admins should be able to list all users, so we use NO_ACCESS
-query ListUsers @auth(level: NO_ACCESS) {
-  users {
+# Get user's orders and tracking timeline
+query GetUserServiceRequests @auth(level: USER) {
+  orders(where: { userId: { eq_expr: "auth.uid" } }) {
     id
-    username
-  }
-}
-
-# Logged in users can list all their reviews and movie titles associated with the review
-# Since the query uses the uid of the current authenticated user, we set auth level to USER
-query ListUserReviews @auth(level: USER) {
-  user(key: { id_expr: "auth.uid" }) {
-    id
-    username
-    # <field>_on_<foreign_key_field> makes it easy to grab info from another table
-    # Here, we use it to grab all the reviews written by the user.
-    reviews: reviews_on_user {
-      rating
-      reviewDate
-      reviewText
-      movie {
-        id
+    paymentStatus
+    amount
+    createdAt
+    servicePlan {
+      planType
+      service {
         title
       }
     }
-  }
-}
-
-# Get movie by id
-query GetMovieById($id: UUID!) @auth(level: PUBLIC, insecureReason: "Anyone can get a movie by id.") {
-  movie(id: $id) {
-    id
-    title
-    imageUrl
-    genre
-    metadata: movieMetadata_on_movie {
-      rating
-      releaseYear
-      description
+    business {
+      name
     }
-    reviews: reviews_on_movie {
-      reviewText
-      reviewDate
-      rating
-      user {
+    requests: serviceRequests_on_order {
+      id
+      status
+      taxYear
+      quarter
+      month
+      expectedCompletionDate
+      createdAt
+      documents: documents_on_serviceRequest {
         id
-        username
+        fileName
+        fileUrl
+        uploaderType
       }
     }
   }
 }
 
-# Search for movies, actors, and reviews
-query SearchMovie($titleInput: String, $genre: String) @auth(level: PUBLIC, insecureReason: "Anyone can search for movies.") {
-  movies(
-    where: {
-      _and: [{ genre: { eq: $genre } }, { title: { contains: $titleInput } }]
-    }
-  ) {
+# Get all service requests for admin view
+query GetAllServiceRequests @auth(level: NO_ACCESS) {
+  serviceRequests {
     id
-    title
-    genre
-    imageUrl
+    status
+    taxYear
+    quarter
+    month
+    expectedCompletionDate
+    createdAt
+    order {
+      paymentStatus
+      user {
+        email
+        username
+      }
+      business {
+        name
+      }
+      servicePlan {
+        planType
+        service {
+          title
+        }
+      }
+    }
+    documents: documents_on_serviceRequest {
+      fileName
+      fileUrl
+      uploaderType
+    }
   }
 }

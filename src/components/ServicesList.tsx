@@ -41,7 +41,10 @@ export default function ServicesList() {
         const querySnapshot = await getDocs(collection(db, "services"));
         const servicesData: Service[] = [];
         querySnapshot.forEach((doc) => {
-          servicesData.push({ id: doc.id, ...doc.data() } as Service);
+          const data = doc.data();
+          if (data.isPublished !== false) {
+            servicesData.push({ id: doc.id, ...data } as Service);
+          }
         });
         setServices(servicesData);
       } catch (error) {
@@ -115,37 +118,43 @@ export default function ServicesList() {
                 <h2 className={styles.categoryTitle}>{category}</h2>
                 <div className={styles.serviceGrid}>
                   {categoryServices.map((service) => (
-                    <div key={service.id} className={styles.serviceCard} style={service.isCombo ? { border: '2px solid #f59e0b', boxShadow: '0 10px 15px -3px rgba(245, 158, 11, 0.2)' } : {}}>
-                      <div className={styles.cardHeader}>
-                        <h3 style={{ marginRight: '1rem' }}>{service.name}</h3>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                          {service.isCombo && <span className={styles.badge} style={{ backgroundColor: '#f59e0b' }}>Combo</span>}
-                          {service.isRecurring && <span className={styles.badge}>Recurring</span>}
+                    <div key={service.id} className={`cleartax-card ${styles.serviceCard}`} style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '2rem', background: 'var(--card-bg)', border: service.isCombo ? '2px solid #f59e0b' : undefined, boxShadow: service.isCombo ? '0 10px 15px -3px rgba(245, 158, 11, 0.2)' : undefined }}>
+                      <div className={styles.cardHeader} style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(255, 107, 0, 0.1)', color: 'var(--accent-color)' }}>
+                          <span style={{ fontSize: '1.5rem' }}>📄</span>
                         </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'flex-start' }}>
+                          <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>
+                            <Link href={getDetailsUrl(service)} style={{ textDecoration: 'none', color: 'var(--text-color)', transition: 'color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-color)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-color)'}>
+                              {service.name}
+                            </Link>
+                          </h3>
+                        </div>
+                        {(service.isCombo || service.isRecurring) && (
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            {service.isCombo && <span className={styles.badge} style={{ backgroundColor: '#f59e0b', fontSize: '0.7rem' }}>Combo</span>}
+                            {service.isRecurring && <span className={styles.badge} style={{ fontSize: '0.7rem' }}>Recurring</span>}
+                          </div>
+                        )}
                       </div>
-                      <p className={styles.description}>{service.description}</p>
-                      {service.documentsRequired && (
-                        <div style={{marginTop: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem', color: '#475569'}}>
-                          <strong>Required Documents:</strong> {service.documentsRequired}
-                        </div>
-                      )}
-                      <div className={styles.cardFooter}>
-                        <span className={styles.period} style={{ textTransform: 'capitalize' }}>{service.period}</span>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      
+                      <div 
+                        className={`${styles.description} ${styles.richContent}`} 
+                        style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6, flexGrow: 1, margin: 0 }}
+                        dangerouslySetInnerHTML={{ __html: service.description ? service.description.replace(/&nbsp;/g, ' ') : '' }}
+                      />
+                      
+                      <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
+                        <span className={styles.period} style={{ textTransform: 'capitalize', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{service.period}</span>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                           <Link 
                             href={getDetailsUrl(service)} 
-                            className={styles.buyBtn} 
-                            style={{ backgroundColor: 'transparent', color: 'var(--text-color)', border: '1px solid var(--border-color)', textDecoration: 'none', display: 'flex', alignItems: 'center' }}
+                            style={{ textDecoration: 'none', color: 'var(--accent-color)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', transition: 'all 0.3s ease' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.gap = '0.75rem'; }} 
+                            onMouseLeave={(e) => { e.currentTarget.style.gap = '0.5rem'; }}
                           >
-                            Details
+                            Details <span>→</span>
                           </Link>
-                          <button 
-                            className={styles.buyBtn} 
-                            onClick={() => handleBuy(service)}
-                            disabled={buyingId === service.id}
-                          >
-                            {buyingId === service.id ? "Processing..." : "Buy Now"}
-                          </button>
                         </div>
                       </div>
                     </div>

@@ -16,6 +16,13 @@
   overflow: hidden;
 }
 
+.contentWrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  width: 100%;
+}
+
 .hero::after {
   content: '';
   position: absolute;

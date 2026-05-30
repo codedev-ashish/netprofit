@@ -64,7 +64,7 @@
 
 .serviceGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 2rem;
 }
 
@@ -162,4 +162,24 @@
   border-radius: var(--radius);
   color: var(--text-muted);
   font-size: 1.1rem;
+}
+
+.detailsLayout {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .detailsLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.richContent * {
+  white-space: normal !important;
+  max-width: 100% !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
 }

@@ -5,20 +5,45 @@ import styles from "../page.module.css";
 import { db } from "../../../../src/lib/firebase";
 import { collection, addDoc, serverTimestamp, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Trash2, Edit2 } from "lucide-react";
+import dynamic from "next/dynamic";
+import "react-quill-new/dist/quill.snow.css";
+
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
 export default function AdminServices() {
   const [serviceName, setServiceName] = useState("");
   const [slug, setSlug] = useState("");
   const [serviceCategory, setServiceCategory] = useState("Registration");
   const [serviceDescription, setServiceDescription] = useState("");
-  const [serviceDocumentsRequired, setServiceDocumentsRequired] = useState("");
+  const [serviceDocumentsRequired, setServiceDocumentsRequired] = useState<string[]>([]);
   const [servicePeriod, setServicePeriod] = useState("one-time");
   const [serviceRecurring, setServiceRecurring] = useState(false);
   const [isCombo, setIsCombo] = useState(false);
   const [comboServices, setComboServices] = useState<string[]>([]);
+  const [servicePrice, setServicePrice] = useState<number>(0);
+  const [serviceFeatures, setServiceFeatures] = useState<string[]>(["Professional Assistance", "100% Online Process", "Dedicated Support", "Secure Payment"]);
+  const [serviceContent, setServiceContent] = useState("");
+  const [isPublished, setIsPublished] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [servicesList, setServicesList] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }, { 'font': [] }],
+      [{ 'size': ['small', false, 'large', 'huge'] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote', 'code-block'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'script': 'sub'}, { 'script': 'super' }],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'indent': '-1' }, { 'indent': '+1' }],
+      [{ 'direction': 'rtl' }],
+      [{ 'align': [] }],
+      ['link', 'image', 'video'],
+      ['clean']
+    ],
+    table: true
+  };
 
   useEffect(() => {
     fetchServices();
@@ -57,6 +82,10 @@ export default function AdminServices() {
       isRecurring: serviceRecurring,
       isCombo: isCombo,
       comboServices: isCombo ? comboServices : [],
+      price: servicePrice,
+      features: serviceFeatures,
+      content: serviceContent,
+      isPublished: isPublished,
     };
 
     try {
@@ -88,17 +117,31 @@ export default function AdminServices() {
     }
   };
 
+  const togglePublishStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateDoc(doc(db, "services", id), { isPublished: !currentStatus });
+      fetchServices();
+    } catch (error) {
+      console.error("Error toggling publish status:", error);
+      alert("Failed to update status.");
+    }
+  };
+
   const handleEdit = (s: any) => {
     setEditingId(s.id);
     setServiceName(s.name);
     setSlug(s.slug || "");
     setServiceCategory(s.category);
     setServiceDescription(s.description);
-    setServiceDocumentsRequired(s.documentsRequired || "");
+    setServiceDocumentsRequired(Array.isArray(s.documentsRequired) ? s.documentsRequired : (s.documentsRequired ? [s.documentsRequired] : []));
     setServicePeriod(s.period);
     setServiceRecurring(s.isRecurring);
     setIsCombo(s.isCombo || false);
     setComboServices(s.comboServices || []);
+    setServicePrice(s.price || 0);
+    setServiceFeatures(s.features || ["Professional Assistance", "100% Online Process", "Dedicated Support", "Secure Payment"]);
+    setServiceContent(s.content || "");
+    setIsPublished(s.isPublished !== false);
   };
 
   const resetForm = () => {
@@ -106,12 +149,16 @@ export default function AdminServices() {
     setServiceName("");
     setSlug("");
     setServiceDescription("");
-    setServiceDocumentsRequired("");
+    setServiceDocumentsRequired([]);
     setServiceRecurring(false);
     setIsCombo(false);
     setComboServices([]);
     setServicePeriod("one-time");
     setServiceCategory("Registration");
+    setServicePrice(0);
+    setServiceFeatures(["Professional Assistance", "100% Online Process", "Dedicated Support", "Secure Payment"]);
+    setServiceContent("");
+    setIsPublished(true);
   };
 
   return (
@@ -139,13 +186,87 @@ export default function AdminServices() {
               <option value="Compliance">Compliance</option>
             </select>
           </div>
-          <div className={styles.inputGroup}>
+          <div className={styles.inputGroup} style={{ paddingBottom: '2rem' }}>
             <label>Description</label>
-            <textarea rows={2} value={serviceDescription} onChange={(e) => setServiceDescription(e.target.value)} required className={styles.inputField} />
+            <div style={{ background: 'white', color: 'black' }}>
+              <ReactQuill 
+                theme="snow" 
+                value={serviceDescription} 
+                onChange={setServiceDescription} 
+                modules={quillModules}
+                style={{ height: '150px', marginBottom: '3rem' }} 
+              />
+            </div>
           </div>
           <div className={styles.inputGroup}>
             <label>Documents Required</label>
-            <textarea rows={2} placeholder="e.g. PAN Card, Bank Statement, Aadhar" value={serviceDocumentsRequired} onChange={(e) => setServiceDocumentsRequired(e.target.value)} className={styles.inputField} />
+            {serviceDocumentsRequired.map((docItem, idx) => (
+              <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <input 
+                  type="text" 
+                  value={docItem}
+                  onChange={(e) => {
+                    const newDocs = [...serviceDocumentsRequired];
+                    newDocs[idx] = e.target.value;
+                    setServiceDocumentsRequired(newDocs);
+                  }}
+                  className={styles.inputField} 
+                  style={{ flexGrow: 1 }}
+                />
+                <button type="button" onClick={() => {
+                  const newDocs = serviceDocumentsRequired.filter((_, i) => i !== idx);
+                  setServiceDocumentsRequired(newDocs);
+                }} style={{ backgroundColor: '#e53e3e', color: 'white', border: 'none', borderRadius: '4px', padding: '0 1rem', cursor: 'pointer', fontWeight: 'bold' }}>
+                  X
+                </button>
+              </div>
+            ))}
+            <button type="button" onClick={() => setServiceDocumentsRequired([...serviceDocumentsRequired, ""])} style={{ alignSelf: 'flex-start', padding: '0.5rem 1rem', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+              + Add Document
+            </button>
+          </div>
+          <div className={styles.inputGroup}>
+            <label>Price</label>
+            <input type="number" value={servicePrice} onChange={(e) => setServicePrice(parseFloat(e.target.value))} required className={styles.inputField} min="0" step="0.01" />
+          </div>
+          <div className={styles.inputGroup}>
+            <label>Pricing Features (Benefits)</label>
+            {serviceFeatures.map((feat, idx) => (
+              <div key={idx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <input 
+                  type="text" 
+                  value={feat}
+                  onChange={(e) => {
+                    const newFeatures = [...serviceFeatures];
+                    newFeatures[idx] = e.target.value;
+                    setServiceFeatures(newFeatures);
+                  }}
+                  className={styles.inputField} 
+                  style={{ flexGrow: 1 }}
+                />
+                <button type="button" onClick={() => {
+                  const newFeatures = serviceFeatures.filter((_, i) => i !== idx);
+                  setServiceFeatures(newFeatures);
+                }} style={{ backgroundColor: '#e53e3e', color: 'white', border: 'none', borderRadius: '4px', padding: '0 1rem', cursor: 'pointer', fontWeight: 'bold' }}>
+                  X
+                </button>
+              </div>
+            ))}
+            <button type="button" onClick={() => setServiceFeatures([...serviceFeatures, ""])} style={{ alignSelf: 'flex-start', padding: '0.5rem 1rem', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+              + Add Feature
+            </button>
+          </div>
+          <div className={styles.inputGroup} style={{ paddingBottom: '2rem' }}>
+            <label>Rich Content (HTML/Markdown)</label>
+            <div style={{ background: 'white', color: 'black' }}>
+              <ReactQuill 
+                theme="snow" 
+                value={serviceContent} 
+                onChange={setServiceContent} 
+                modules={quillModules}
+                style={{ height: '300px', marginBottom: '3rem' }} 
+              />
+            </div>
           </div>
           <div className={styles.inputGroup}>
             <label>Period</label>
@@ -163,6 +284,10 @@ export default function AdminServices() {
           <div className={styles.inputGroup} style={{flexDirection: 'row', alignItems: 'center', gap: '10px'}}>
             <input type="checkbox" id="isCombo" checked={isCombo} onChange={(e) => setIsCombo(e.target.checked)} style={{width: '18px', height: '18px'}} />
             <label htmlFor="isCombo" style={{fontWeight: 600}}>Is this a Combo Service?</label>
+          </div>
+          <div className={styles.inputGroup} style={{flexDirection: 'row', alignItems: 'center', gap: '10px'}}>
+            <input type="checkbox" id="isPublished" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} style={{width: '18px', height: '18px'}} />
+            <label htmlFor="isPublished" style={{fontWeight: 600}}>Publish Service</label>
           </div>
           
           {isCombo && (
@@ -215,15 +340,18 @@ export default function AdminServices() {
               <div>
                 <strong style={{fontSize: '1.1rem'}}>{s.name} {s.isCombo && <span style={{backgroundColor: '#e0e7ff', color: '#4338ca', padding: '0.15rem 0.5rem', borderRadius: '12px', fontSize: '0.75rem', marginLeft: '0.5rem', verticalAlign: 'middle'}}>COMBO</span>}</strong> 
                 <div style={{fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem'}}>
-                  {s.category} • <span style={{textTransform: 'capitalize'}}>{s.period}</span> {s.isRecurring ? '(Recurring)' : ''}
+                  {s.category} • <span style={{textTransform: 'capitalize'}}>{s.period}</span> {s.isRecurring ? '(Recurring)' : ''} • Price: ₹{s.price || 0} • <strong>Slug:</strong> {s.slug}
                 </div>
                 {s.documentsRequired && (
                   <div style={{fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem'}}>
-                    <strong>Docs Required:</strong> {s.documentsRequired}
+                    <strong>Docs Required:</strong> {Array.isArray(s.documentsRequired) ? s.documentsRequired.join(", ") : s.documentsRequired}
                   </div>
                 )}
               </div>
-              <div style={{display: 'flex', gap: '1rem'}}>
+              <div style={{display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'flex-end'}}>
+                <button onClick={() => togglePublishStatus(s.id, s.isPublished !== false)} style={{color: s.isPublished !== false ? '#d97706' : '#10b981', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600}}>
+                  {s.isPublished !== false ? "Unpublish" : "Publish"}
+                </button>
                 <button onClick={() => handleEdit(s)} style={{color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
                   <Edit2 size={16}/> Edit
                 </button>

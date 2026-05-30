@@ -33,7 +33,7 @@ export default function Home() {
             <div className={styles.featureIcon}>🏢</div>
             <h2>Corporate Services</h2>
             <p>Complete corporate solutions from company registration to annual compliance. Start your business the right way.</p>
-            <Link href="/services/company-registration" className={styles.learnMore}>Read More →</Link>
+            <Link href="/services/private-limited-company" className={styles.learnMore}>Read More →</Link>
           </div>
           <div className={`premium-card ${styles.featureCard}`}>
             <div className={styles.featureIcon}>⚖️</div>
@@ -59,7 +59,7 @@ export default function Home() {
       <section className={`${styles.section} ${styles.altSection}`}>
         <h2 className={styles.sectionTitle}>Popular Services by NetProfit</h2>
         <div className={styles.servicesGrid}>
-          <Link href="/services/company-registration" className={`premium-card ${styles.serviceItem}`}>
+          <Link href="/services/private-limited-company" className={`premium-card ${styles.serviceItem}`}>
             <h3>Company Registration</h3>
             <p>Pvt Ltd, LLP, Startups</p>
           </Link>
@@ -67,17 +67,17 @@ export default function Home() {
             <h3>GST Registration</h3>
             <p>Fast & 100% Online</p>
           </Link>
-          <Link href="/services/trademark" className={`premium-card ${styles.serviceItem}`}>
-            <h3>Trademark</h3>
-            <p>Protect Your Brand</p>
-          </Link>
-          <Link href="/services/fssai-license" className={`premium-card ${styles.serviceItem}`}>
-            <h3>FSSAI License</h3>
-            <p>Food Business Registration</p>
-          </Link>
-          <Link href="/services/income-tax" className={`premium-card ${styles.serviceItem}`}>
+          <Link href="/services/income-tax-return" className={`premium-card ${styles.serviceItem}`}>
             <h3>Income Tax Filing</h3>
             <p>Max Refunds, Zero Errors</p>
+          </Link>
+          <Link href="/services/limited-liability-partnership" className={`premium-card ${styles.serviceItem}`}>
+            <h3>LLP Registration</h3>
+            <p>Register an LLP Fast</p>
+          </Link>
+          <Link href="/services/pf-return" className={`premium-card ${styles.serviceItem}`}>
+            <h3>PF & ESIC Return</h3>
+            <p>Easy Monthly Filing</p>
           </Link>
           <Link href="/services/msme-registration" className={`premium-card ${styles.serviceItem}`}>
             <h3>MSME / Udyam</h3>

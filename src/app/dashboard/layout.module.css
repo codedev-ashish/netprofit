@@ -63,9 +63,16 @@
     width: 100%;
     border-right: none;
     border-bottom: 1px solid var(--border-color);
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     flex-direction: row;
     overflow-x: auto;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+    gap: 0.5rem;
+  }
+  
+  .sidebar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
   }
   
   .sidebarTitle {
@@ -74,5 +81,7 @@
   
   .navItem {
     white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
   }
 }

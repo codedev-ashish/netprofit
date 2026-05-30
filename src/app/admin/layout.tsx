@@ -7,18 +7,19 @@ import { usePathname } from "next/navigation";
 import { auth, db } from "../../lib/firebase";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { 
-  LayoutDashboard, 
-  Briefcase, 
-  Newspaper, 
-  MenuSquare, 
-  FileText, 
-  Users, 
-  Bell, 
-  Smartphone, 
+import {
+  LayoutDashboard,
+  Briefcase,
+  Newspaper,
+  MenuSquare,
+  FileText,
+  Users,
+  Bell,
+  Smartphone,
   Settings,
   LogOut,
-  TrendingUp
+  TrendingUp,
+  Calculator
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -32,7 +33,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [logoUrl, setLogoUrl] = useState("");
 
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
-    Settings: pathname.startsWith('/admin/settings')
+    Settings: pathname.startsWith('/admin/settings'),
+    News: pathname.startsWith('/admin/news')
   });
 
   const toggleSubmenu = (name: string) => {
@@ -87,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   if (loading) {
-    return <div className={styles.loaderContainer}>Loading admin portal...</div>;
+    return <div className={styles.loaderContainer} suppressHydrationWarning>Loading admin portal...</div>;
   }
 
   if (!isAuthenticated) {
@@ -95,7 +97,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className={styles.loginContainer}>
         <div className={styles.loginCard}>
           <h2>Admin Access</h2>
-          <p style={{color: 'var(--text-muted)'}}>Secure login required.</p>
+          <p style={{ color: 'var(--text-muted)' }}>Secure login required.</p>
           <form onSubmit={handleLogin} className={styles.form}>
             <div className={styles.inputGroup}>
               <label>Email</label>
@@ -115,22 +117,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "Revenue", href: "/admin/revenue", icon: TrendingUp },
     { name: "Manage Services", href: "/admin/services", icon: Briefcase },
-    { name: "News", href: "/admin/news", icon: Newspaper },
+    {
+      name: "News",
+      icon: Newspaper,
+      subItems: [
+        { name: "Add New", href: "/admin/news/add" },
+        { name: "Published News", href: "/admin/news" },
+        { name: "Categories", href: "/admin/news/categories" }
+      ]
+    },
     { name: "Public Menu", href: "/admin/menu", icon: MenuSquare },
     { name: "Pages", href: "/admin/pages", icon: FileText },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "IPOs", href: "/admin/ipos", icon: TrendingUp },
+    { name: "Tools", href: "/admin/tools", icon: Calculator },
     { name: "Notifications", href: "/admin/notifications", icon: Bell },
     { name: "Mobile App", href: "/admin/mobile", icon: Smartphone },
-    { 
-      name: "Settings", 
+    {
+      name: "Settings",
       icon: Settings,
       subItems: [
         { name: "Website Config", href: "/admin/settings/website-config" },
         { name: "Ads & Custom Code", href: "/admin/settings/ads" },
         { name: "Cache (Redis)", href: "/admin/settings/cache" },
-        { name: "Header & Footer", href: "/admin/settings/header-footer" }
+        { name: "Header & Footer", href: "/admin/settings/header-footer" },
+        { name: "Payment Gateways", href: "/admin/settings/payment-gateways" },
+        { name: "Storage Config", href: "/admin/settings/storage" },
+        { name: "Database Settings", href: "/admin/settings/database" }
       ]
     },
   ];
@@ -153,10 +168,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             if (item.subItems) {
               const isExpanded = expandedMenus[item.name];
               const isAnyChildActive = item.subItems.some(sub => pathname.startsWith(sub.href));
-              
+
               return (
                 <div key={item.name}>
-                  <button 
+                  <button
                     onClick={() => toggleSubmenu(item.name)}
                     className={`${styles.navLink} ${isAnyChildActive && !isExpanded ? styles.active : ""}`}
                     style={{ width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
@@ -170,8 +185,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {isExpanded && (
                     <div className={styles.submenu}>
                       {item.subItems.map(sub => (
-                        <Link 
-                          key={sub.name} 
+                        <Link
+                          key={sub.name}
                           href={sub.href}
                           className={`${styles.submenuLink} ${pathname === sub.href ? styles.submenuLinkActive : ""}`}
                         >
@@ -186,9 +201,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href) && item.name !== 'Settings');
             return (
-              <Link 
-                key={item.name} 
-                href={item.href!} 
+              <Link
+                key={item.name}
+                href={item.href!}
                 className={`${styles.navLink} ${isActive ? styles.active : ""}`}
               >
                 <Icon className={styles.navIcon} />
@@ -209,7 +224,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className={styles.pageContent}>
           {children}
         </div>
-        
+
         {/* Footer */}
         <footer className={styles.footer}>
           &copy; {new Date().getFullYear()} {siteName}. All rights reserved. Admin Dashboard.

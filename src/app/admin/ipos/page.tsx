@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import styles from "../page.module.css";
 import { db } from "../../../../src/lib/firebase";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { Trash2, Edit2, Plus } from "lucide-react";
+import { collection, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { Trash2, Edit2, Plus, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -43,6 +43,19 @@ export default function AdminIPOs() {
     }
   };
 
+  const togglePublish = async (id: string, currentStatus: boolean) => {
+    try {
+      // If isVisible is undefined, assume it's true currently
+      const newStatus = currentStatus === false ? true : false;
+      await updateDoc(doc(db, "ipos", id), {
+        isVisible: newStatus
+      });
+      fetchIPOs();
+    } catch (error) {
+      console.error("Error toggling publish status:", error);
+    }
+  };
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -76,6 +89,10 @@ export default function AdminIPOs() {
                   </div>
                 </div>
                 <div style={{display: 'flex', gap: '1rem'}}>
+                  <button onClick={() => togglePublish(ipo.id, ipo.isVisible)} style={{color: ipo.isVisible !== false ? '#10b981' : '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                    {ipo.isVisible !== false ? <Eye size={16}/> : <EyeOff size={16}/>}
+                    {ipo.isVisible !== false ? 'Published' : 'Unpublished'}
+                  </button>
                   <button onClick={() => router.push(`/admin/ipos/edit?id=${ipo.id}`)} style={{color: '#60a5fa', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
                     <Edit2 size={16}/> Edit
                   </button>
@@ -106,6 +123,10 @@ export default function AdminIPOs() {
                   </div>
                 </div>
                 <div style={{display: 'flex', gap: '1rem'}}>
+                  <button onClick={() => togglePublish(ipo.id, ipo.isVisible)} style={{color: ipo.isVisible !== false ? '#10b981' : '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                    {ipo.isVisible !== false ? <Eye size={16}/> : <EyeOff size={16}/>}
+                    {ipo.isVisible !== false ? 'Published' : 'Unpublished'}
+                  </button>
                   <button onClick={() => router.push(`/admin/ipos/edit?id=${ipo.id}`)} style={{color: '#60a5fa', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
                     <Edit2 size={16}/> Edit
                   </button>
@@ -132,6 +153,10 @@ export default function AdminIPOs() {
                   </div>
                 </div>
                 <div style={{display: 'flex', gap: '1rem'}}>
+                  <button onClick={() => togglePublish(ipo.id, ipo.isVisible)} style={{color: ipo.isVisible !== false ? '#10b981' : '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                    {ipo.isVisible !== false ? <Eye size={16}/> : <EyeOff size={16}/>}
+                    {ipo.isVisible !== false ? 'Published' : 'Unpublished'}
+                  </button>
                   <button onClick={() => router.push(`/admin/ipos/edit?id=${ipo.id}`)} style={{color: '#60a5fa', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
                     <Edit2 size={16}/> Edit
                   </button>

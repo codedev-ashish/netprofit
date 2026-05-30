@@ -5,7 +5,8 @@ import styles from "../page.module.css";
 import { db, auth } from "../../../lib/firebase";
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, deleteDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { Building2, Plus, Trash2 } from "lucide-react";
+import { Building2, Plus, Trash2, ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface Business {
   id: string;
@@ -22,6 +23,7 @@ export default function ManageBusinessesPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const router = useRouter();
   
   const [showAddForm, setShowAddForm] = useState(false);
   const [newBusiness, setNewBusiness] = useState({ name: '', type: '', gstNumber: '', panNumber: '', tanNumber: '', pfNumber: '', esicNumber: '' });
@@ -150,30 +152,51 @@ export default function ManageBusinessesPage() {
           <p>No business profiles created yet.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-          {businesses.map(b => (
-            <div key={b.id} className="cleartax-card" style={{ padding: '1.5rem', position: 'relative' }}>
-              <button onClick={() => handleDelete(b.id)} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'transparent', border: 'none', color: '#e53e3e', cursor: 'pointer' }}>
-                <Trash2 size={18} />
-              </button>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
-                  <Building2 size={24} color="var(--primary-color)" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
+          {businesses.map(b => {
+            return (
+              <div 
+                key={b.id} 
+                className="cleartax-card" 
+                style={{ padding: '1.5rem', position: 'relative', cursor: 'pointer', transition: 'transform 0.2s' }}
+                onClick={() => router.push(`/dashboard/businesses/${b.id}`)}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; }}
+              >
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleDelete(b.id); }} 
+                  style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'transparent', border: 'none', color: '#e53e3e', cursor: 'pointer', zIndex: 10 }}
+                >
+                  <Trash2 size={18} />
+                </button>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                  <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
+                    <Building2 size={24} color="var(--primary-color)" />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>{b.name}</h3>
+                    <span style={{ fontSize: '0.8rem', backgroundColor: 'var(--primary-color)', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '20px' }}>{b.type}</span>
+                  </div>
                 </div>
-                <div>
-                  <h3 style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>{b.name}</h3>
-                  <span style={{ fontSize: '0.8rem', backgroundColor: 'var(--primary-color)', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '20px' }}>{b.type}</span>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+                  {b.gstNumber && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}><strong>GST:</strong> {b.gstNumber}</p>}
+                  {b.panNumber && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}><strong>PAN:</strong> {b.panNumber}</p>}
+                  {b.tanNumber && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}><strong>TAN:</strong> {b.tanNumber}</p>}
+                  {b.pfNumber && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}><strong>PF:</strong> {b.pfNumber}</p>}
+                  {b.esicNumber && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}><strong>ESIC:</strong> {b.esicNumber}</p>}
+                </div>
+
+                <hr style={{ margin: '1rem 0', borderColor: 'var(--border-color)', borderStyle: 'solid', borderWidth: '1px 0 0 0' }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--primary-color)', fontSize: '0.85rem', fontWeight: 600 }}>
+                  <span>Open Business Details</span>
+                  <ArrowRight size={16} />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                {b.gstNumber && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}><strong>GST:</strong> {b.gstNumber}</p>}
-                {b.panNumber && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}><strong>PAN:</strong> {b.panNumber}</p>}
-                {b.tanNumber && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}><strong>TAN:</strong> {b.tanNumber}</p>}
-                {b.pfNumber && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}><strong>PF:</strong> {b.pfNumber}</p>}
-                {b.esicNumber && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}><strong>ESIC:</strong> {b.esicNumber}</p>}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

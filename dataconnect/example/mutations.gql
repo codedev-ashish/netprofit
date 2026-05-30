@@ -1,33 +1,31 @@
-# Example mutations for a simple movie app
+# Example mutations for the online services platform
 
-# Create a movie based on user input
-mutation CreateMovie($title: String!, $genre: String!, $imageUrl: String!)
-@auth(level: USER_EMAIL_VERIFIED, insecureReason: "Any email verified users can create a new movie.") {
-  movie_insert(data: { title: $title, genre: $genre, imageUrl: $imageUrl })
+# Upsert (update or insert) a user's info based on their auth.uid
+mutation UpsertUser($email: String, $mobile: String, $username: String) @auth(level: USER) {
+  user_upsert(data: { id_expr: "auth.uid", email: $email, mobile: $mobile, username: $username })
 }
 
-# Upsert (update or insert) a user's username based on their auth.uid
-mutation UpsertUser($username: String!) @auth(level: USER) {
-  # The "auth.uid" server value ensures that users can only register their own user.
-  user_upsert(data: { id_expr: "auth.uid", username: $username })
+# Add a Business
+mutation AddBusiness($name: String!, $gstin: String, $pan: String) @auth(level: USER) {
+  business_insert(data: { userId_expr: "auth.uid", name: $name, gstin: $gstin, pan: $pan })
 }
 
-# Add a review for a movie
-mutation AddReview($movieId: UUID!, $rating: Int!, $reviewText: String!)
-@auth(level: USER) {
-  review_upsert(
-    data: {
-      userId_expr: "auth.uid"
-      movieId: $movieId
-      rating: $rating
-      reviewText: $reviewText
-      # reviewDate defaults to today in the schema. No need to set it manually.
-    }
-  )
+# Create an Order for a service plan
+mutation CreateOrder($businessId: UUID!, $servicePlanId: UUID!, $amount: Float!) @auth(level: USER) {
+  order_insert(data: { userId_expr: "auth.uid", businessId: $businessId, servicePlanId: $servicePlanId, amount: $amount, paymentStatus: "Pending" })
 }
 
-# Logged in user can delete their review for a movie
-mutation DeleteReview($movieId: UUID!) @auth(level: USER) {
-  # The "auth.uid" server value ensures that users can only delete their own reviews.
-  review_delete(key: { userId_expr: "auth.uid", movieId: $movieId })
+# Create a Service Request linked to an order
+mutation CreateServiceRequest($orderId: UUID!, $taxYear: String, $quarter: String, $month: String) @auth(level: USER) {
+  serviceRequest_insert(data: { orderId: $orderId, status: "Pending", taxYear: $taxYear, quarter: $quarter, month: $month })
+}
+
+# Upload a Document (User or Admin)
+mutation UploadDocument($serviceRequestId: UUID!, $uploaderType: String!, $fileName: String!, $fileUrl: String!, $fileType: String) @auth(level: USER) {
+  document_insert(data: { serviceRequestId: $serviceRequestId, uploaderType: $uploaderType, fileName: $fileName, fileUrl: $fileUrl, fileType: $fileType })
+}
+
+# Update Service Request Status (Admin)
+mutation UpdateServiceRequestStatus($id: UUID!, $status: String!, $expectedCompletionDate: Date) @auth(level: NO_ACCESS) {
+  serviceRequest_update(id: $id, data: { status: $status, expectedCompletionDate: $expectedCompletionDate, updatedAt_expr: "request.time" })
 }
