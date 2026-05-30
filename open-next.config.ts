@@ -1,5 +1,6 @@
 import { defineCloudflareConfig } from "@opennextjs/cloudflare";
 
+<<<<<<< HEAD
 const config = defineCloudflareConfig();
 
 export default {
@@ -13,3 +14,8 @@ export default {
     splitRoutes: true,
   }
 };
+=======
+export default defineCloudflareConfig({
+  // OpenNext built-in helper automatically generates the correct structural defaults
+});
+>>>>>>> 9c339c352cb7c2baa97cb98ddc23abe476d3d0d7
