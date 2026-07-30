@@ -53,8 +53,26 @@ export default function CacheConfig() {
     }
   };
 
-  const clearCache = () => {
-    alert("This action would clear the redis cache via an API endpoint in production.");
+  const clearCache = async () => {
+    if (!confirm("Are you sure you want to purge the entire website cache?")) return;
+    
+    setLoading(true);
+    setMessage("Purging cache...");
+    
+    try {
+      const response = await fetch('/api/admin/purge-cache', { method: 'POST' });
+      const data = await response.json();
+      
+      if (data.success) {
+        setMessage("✅ " + data.message);
+      } else {
+        setMessage("❌ Error: " + data.message);
+      }
+    } catch (err: any) {
+      setMessage("❌ Failed to purge cache: " + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

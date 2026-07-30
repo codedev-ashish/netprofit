@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
@@ -17,7 +17,10 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-const db = getFirestore(app);
+// Initialize Firestore with long polling to prevent Node event loop hangs during SSR in Next.js
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+});
 const auth = getAuth(app);
 const storage = getStorage(app);
 

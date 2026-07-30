@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import styles from "../../page.module.css";
-import { db, auth } from "../../../../lib/firebase";
+import { db } from "../../../../lib/firebase";
+import { auth } from "../../../../lib/firebase-auth";
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useParams, useRouter } from "next/navigation";
@@ -35,7 +36,22 @@ export default function BusinessDetailsPage() {
   const [showBuyForm, setShowBuyForm] = useState(false);
   const [selectedBuyServiceId, setSelectedBuyServiceId] = useState("");
   const [selectedBuyPlan, setSelectedBuyPlan] = useState("");
+  const [selectedTaxYear, setSelectedTaxYear] = useState("2026-27");
+  const [startMonth, setStartMonth] = useState("");
+  const [startYear, setStartYear] = useState("");
+  const [endMonth, setEndMonth] = useState("");
+  const [endYear, setEndYear] = useState("");
   const [buyingService, setBuyingService] = useState(false);
+
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const taxYearSlugs = [
+    "accounting-bookkeeping",
+    "income-tax-return",
+    "llp-annual-return",
+    "opc-annual-filing",
+    "roc-annual-compliance",
+    "gst-lut-filing"
+  ];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -55,13 +71,31 @@ export default function BusinessDetailsPage() {
   }, [businessId]);
 
   useEffect(() => {
+    if (!startMonth || !startYear || !selectedBuyPlan) {
+      setEndMonth("");
+      setEndYear("");
+      return;
+    }
+    const startIndex = months.indexOf(startMonth);
+    if (startIndex !== -1) {
+      const addMonths = selectedBuyPlan === 'Half Yearly' ? 5 : 11;
+      const totalMonths = startIndex + addMonths;
+      const endIndex = totalMonths % 12;
+      const addYears = Math.floor(totalMonths / 12);
+      
+      setEndMonth(months[endIndex]);
+      setEndYear((parseInt(startYear) + addYears).toString());
+    }
+  }, [startMonth, startYear, selectedBuyPlan]);
+
+  useEffect(() => {
     if (!selectedBuyServiceId) return;
     const serv = platformServices.find(s => s.id === selectedBuyServiceId);
     if (serv) {
-      if (serv.isCombo || (serv.slug || "").toLowerCase().includes("registration")) {
+      if (!serv.isRecurring) {
         setSelectedBuyPlan("One-time");
       } else {
-        setSelectedBuyPlan(serv.period || "Annual");
+        setSelectedBuyPlan(serv.annualOnly ? 'Annual' : (serv.period || "Annual"));
       }
     }
   }, [selectedBuyServiceId, platformServices]);
@@ -120,9 +154,18 @@ export default function BusinessDetailsPage() {
     const serv = platformServices.find(s => s.id === selectedBuyServiceId);
     if (!serv) return;
 
+    const isTaxYearService = taxYearSlugs.includes(serv.slug);
+    if (serv.isRecurring) {
+      if (isTaxYearService && !selectedTaxYear) {
+        return alert("Please select a Tax Year.");
+      } else if (!isTaxYearService && (!startMonth || !startYear || !endMonth || !endYear)) {
+        return alert("Please select a Start Month and Start Year.");
+      }
+    }
+
     setBuyingService(true);
     try {
-      const amount = selectedBuyPlan === 'Annual' ? 12000 : selectedBuyPlan === 'Quarterly' ? 6000 : selectedBuyPlan === 'Monthly' ? 2000 : serv.price || 5000;
+      const amount = selectedBuyPlan === 'Annual' ? (serv.annualPrice || 12000) : selectedBuyPlan === 'Half Yearly' ? (serv.halfYearlyPrice || 6000) : serv.price || 5000;
       const mockOrderId = `order_bypass_${Date.now()}`;
 
       // 1. Create Order
@@ -134,6 +177,11 @@ export default function BusinessDetailsPage() {
         planType: selectedBuyPlan,
         paymentStatus: "Paid",
         amount: amount,
+        taxYear: isTaxYearService ? selectedTaxYear : "",
+        startMonth: !isTaxYearService && serv.isRecurring ? startMonth : "",
+        startYear: !isTaxYearService && serv.isRecurring ? startYear : "",
+        endMonth: !isTaxYearService && serv.isRecurring ? endMonth : "",
+        endYear: !isTaxYearService && serv.isRecurring ? endYear : "",
         createdAt: serverTimestamp()
       });
 
@@ -146,25 +194,32 @@ export default function BusinessDetailsPage() {
         serviceName: serv.name,
         planType: selectedBuyPlan,
         status: "Pending",
-        taxYear: "2024-25",
-        quarter: selectedBuyPlan === 'Quarterly' ? "Q1" : "",
-        month: selectedBuyPlan === 'Monthly' ? new Date().toISOString().slice(0, 7) : "",
+        taxYear: isTaxYearService ? selectedTaxYear : "",
+        quarter: "",
+        month: "",
+        startMonth: !isTaxYearService && serv.isRecurring ? startMonth : "",
+        startYear: !isTaxYearService && serv.isRecurring ? startYear : "",
+        endMonth: !isTaxYearService && serv.isRecurring ? endMonth : "",
+        endYear: !isTaxYearService && serv.isRecurring ? endYear : "",
         createdAt: serverTimestamp()
       });
 
       // Calculate next due date
       let nextDueDate = null;
       const p = selectedBuyPlan.toLowerCase();
-      const now = new Date();
-      if (p.includes('month')) {
-        now.setMonth(now.getMonth() + 1);
-        nextDueDate = now.toISOString();
+      
+      const existingSub = subscriptions.find(s => s.serviceId === selectedBuyServiceId && s.status === 'active');
+      let baseDate = new Date();
+      if (existingSub && existingSub.nextDueDate && existingSub.status === 'active') {
+         baseDate = new Date(existingSub.nextDueDate);
+      }
+
+      if (p.includes('half') || p === 'half yearly') {
+        baseDate.setMonth(baseDate.getMonth() + 6);
+        nextDueDate = baseDate.toISOString();
       } else if (p.includes('year') || p.includes('annual')) {
-        now.setFullYear(now.getFullYear() + 1);
-        nextDueDate = now.toISOString();
-      } else if (p.includes('quarter')) {
-        now.setMonth(now.getMonth() + 3);
-        nextDueDate = now.toISOString();
+        baseDate.setFullYear(baseDate.getFullYear() + 1);
+        nextDueDate = baseDate.toISOString();
       }
 
       // 3. Create Subscription
@@ -180,7 +235,12 @@ export default function BusinessDetailsPage() {
         status: 'active',
         orderId: orderRef.id,
         businessId: business.id,
-        businessName: business.name
+        businessName: business.name,
+        taxYear: isTaxYearService ? selectedTaxYear : "",
+        startMonth: !isTaxYearService && serv.isRecurring ? startMonth : "",
+        startYear: !isTaxYearService && serv.isRecurring ? startYear : "",
+        endMonth: !isTaxYearService && serv.isRecurring ? endMonth : "",
+        endYear: !isTaxYearService && serv.isRecurring ? endYear : ""
       });
 
       setSelectedBuyServiceId("");
@@ -197,6 +257,31 @@ export default function BusinessDetailsPage() {
     }
   };
 
+  const existingSub = selectedBuyServiceId ? subscriptions.find(s => s.serviceId === selectedBuyServiceId && s.status === 'active') : null;
+  let canPurchase = true;
+  let purchaseWarning = "";
+
+  if (existingSub) {
+    const nextDue = existingSub.nextDueDate ? new Date(existingSub.nextDueDate) : null;
+    const now = new Date();
+    const daysToRenewal = nextDue ? (nextDue.getTime() - now.getTime()) / (1000 * 3600 * 24) : 999;
+    
+    if (daysToRenewal <= 30 && nextDue) {
+      canPurchase = true;
+      purchaseWarning = `Renewal is coming soon on ${nextDue.toLocaleDateString()}. You can purchase the renewal early.`;
+    } else if (existingSub.period?.toLowerCase().includes('half') && selectedBuyPlan?.toLowerCase().includes('half')) {
+      canPurchase = true;
+      purchaseWarning = `You already have a half-yearly plan until ${nextDue ? nextDue.toLocaleDateString() : 'now'}. Purchasing this will extend it for the next 6 months.`;
+    } else {
+      canPurchase = false;
+      if (nextDue) {
+         purchaseWarning = `This service is already purchased and active until ${nextDue.toLocaleDateString()}.`;
+      } else {
+         purchaseWarning = `This service is already purchased and active for this business.`;
+      }
+    }
+  }
+
   if (loading || !business) return <div style={{ padding: '2rem' }}>Loading Business Panel...</div>;
 
   return (
@@ -209,7 +294,7 @@ export default function BusinessDetailsPage() {
       <div className="cleartax-card" style={{ padding: '2rem', marginBottom: '2.5rem', position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
           <div style={{ padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px' }}>
-            <Building2 size={36} color="var(--primary-color)" />
+            <Building2 size={36} color="var(--icon-color)" />
           </div>
           <div>
             <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{business.name}</h1>
@@ -259,14 +344,14 @@ export default function BusinessDetailsPage() {
                 <div style={{ display: 'flex', gap: '1rem', padding: '0.4rem 0' }}>
                   {(() => {
                     const serv = platformServices.find(s => s.id === selectedBuyServiceId);
-                    if (serv?.isCombo || (serv?.slug || "").toLowerCase().includes("registration")) {
+                    if (!serv?.isRecurring) {
                       return (
                         <span style={{ fontSize: '0.85rem', padding: '0.2rem 0.6rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}>
                           One-time
                         </span>
                       );
                     }
-                    return ['Monthly', 'Quarterly', 'Annual'].map(plan => (
+                    return (serv?.annualOnly ? ['Annual'] : ['Half Yearly', 'Annual']).map(plan => (
                       <label key={plan} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', cursor: 'pointer' }}>
                         <input 
                           type="radio" 
@@ -282,12 +367,79 @@ export default function BusinessDetailsPage() {
                 </div>
               </div>
             )}
+
+            {(() => {
+              const serv = platformServices.find(s => s.id === selectedBuyServiceId);
+              const isTaxYearService = serv ? taxYearSlugs.includes(serv.slug) : false;
+              
+              if (!selectedBuyServiceId || !serv?.isRecurring) return null;
+
+              if (isTaxYearService) {
+                return (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: 600 }}>Start Tax Year</label>
+                    <select 
+                      value={selectedTaxYear} 
+                      onChange={e => setSelectedTaxYear(e.target.value)} 
+                      style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-color)' }}
+                    >
+                      <option value="2026-27">2026-27</option>
+                      <option value="2027-28">2027-28</option>
+                    </select>
+                  </div>
+                );
+              } else {
+                return (
+                  <>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: 600 }}>Start Month</label>
+                      <select 
+                        value={startMonth} 
+                        onChange={e => setStartMonth(e.target.value)} 
+                        style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-color)' }}
+                      >
+                        <option value="">-- Month --</option>
+                        {months.map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: 600 }}>Start Year</label>
+                      <select 
+                        value={startYear} 
+                        onChange={e => setStartYear(e.target.value)} 
+                        style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-color)' }}
+                      >
+                        <option value="">-- Year --</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.4rem', fontWeight: 600 }}>End Month & Year</label>
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={endMonth && endYear ? `${endMonth} ${endYear}` : ""} 
+                        placeholder="Auto-calculated"
+                        style={{ width: '100%', padding: '0.6rem', fontSize: '0.85rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-color)' }}
+                      />
+                    </div>
+                  </>
+                );
+              }
+            })()}
           </div>
+
+          {purchaseWarning && (
+            <div style={{ padding: '0.75rem', marginBottom: '1.5rem', borderRadius: '6px', fontSize: '0.85rem', backgroundColor: canPurchase ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: canPurchase ? '#10b981' : '#ef4444', border: `1px solid ${canPurchase ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}` }}>
+              {purchaseWarning}
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '1rem' }}>
             <button 
               type="button" 
-              disabled={buyingService || !selectedBuyServiceId}
+              disabled={buyingService || !selectedBuyServiceId || !canPurchase}
               onClick={handleBuyAndLinkService}
               className="btn btn-primary" 
               style={{ padding: '0.5rem 1.5rem', fontSize: '0.85rem' }}
@@ -347,7 +499,7 @@ export default function BusinessDetailsPage() {
                   }}>
                     {sub.status.toUpperCase()}
                   </span>
-                  <button className="btn btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <button className="btn" style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', backgroundColor: 'rgba(96, 165, 250, 0.1)', color: '#60a5fa', border: '1px solid rgba(96, 165, 250, 0.2)', borderRadius: '6px', fontWeight: 600 }}>
                     <Play size={12} fill="currentColor" /> Manage Filings
                   </button>
                 </div>

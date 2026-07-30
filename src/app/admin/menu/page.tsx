@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react";
 import styles from "../page.module.css";
 import { db } from "../../../lib/firebase";
-import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp } from "firebase/firestore";
-import { Trash2 } from "lucide-react";
+import { collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp, updateDoc } from "firebase/firestore";
+import { Trash2, Edit, Eye, EyeOff } from "lucide-react";
 
 interface MenuItem {
   id: string;
   label: string;
   url: string;
   position: string;
+  isPublished?: boolean;
   createdAt: any;
 }
 
@@ -20,6 +21,7 @@ export default function AdminMenu() {
   const [url, setUrl] = useState("");
   const [position, setPosition] = useState("header_main");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMenu();
@@ -45,21 +47,50 @@ export default function AdminMenu() {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, "menu_items"), {
-        label,
-        url,
-        position,
-        createdAt: serverTimestamp()
-      });
+      if (editingId) {
+        await updateDoc(doc(db, "menu_items", editingId), {
+          label,
+          url,
+          position,
+        });
+        setEditingId(null);
+      } else {
+        await addDoc(collection(db, "menu_items"), {
+          label,
+          url,
+          position,
+          isPublished: true,
+          createdAt: serverTimestamp()
+        });
+      }
       setLabel("");
       setUrl("");
       setPosition("header_main");
       fetchMenu();
     } catch (error) {
-      console.error("Error adding menu item:", error);
-      alert("Failed to add menu item.");
+      console.error("Error saving menu item:", error);
+      alert("Failed to save menu item.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = (item: MenuItem) => {
+    setEditingId(item.id);
+    setLabel(item.label);
+    setUrl(item.url);
+    setPosition(item.position || "header_main");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const togglePublish = async (id: string, currentStatus: boolean) => {
+    try {
+      await updateDoc(doc(db, "menu_items", id), {
+        isPublished: !currentStatus
+      });
+      fetchMenu();
+    } catch (error) {
+      console.error("Error updating publish status:", error);
     }
   };
 
@@ -80,7 +111,21 @@ export default function AdminMenu() {
       <p className={styles.pageSubtitle}>Organize the links shown in the website header.</p>
       
       <div className={`cleartax-card ${styles.managementCard}`}>
-        <h2>Add Menu Item</h2>
+        <h2>{editingId ? "Edit Menu Item" : "Add Menu Item"}</h2>
+        {editingId && (
+          <button 
+            type="button" 
+            onClick={() => {
+              setEditingId(null);
+              setLabel("");
+              setUrl("");
+              setPosition("header_main");
+            }}
+            style={{ marginBottom: '1rem', background: 'none', border: 'none', color: 'var(--icon-color)', cursor: 'pointer', textDecoration: 'underline' }}
+          >
+            Cancel Editing
+          </button>
+        )}
         <form className={styles.form} onSubmit={handleAdd}>
           <div className={styles.inputGroup}>
             <label>Link Text</label>
@@ -118,7 +163,7 @@ export default function AdminMenu() {
             </select>
           </div>
           <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
-            {isSubmitting ? "Adding..." : "Add to Menu"}
+            {isSubmitting ? (editingId ? "Updating..." : "Adding...") : (editingId ? "Update Menu Item" : "Add to Menu")}
           </button>
         </form>
       </div>
@@ -144,18 +189,37 @@ export default function AdminMenu() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {groupItems.map(item => (
                         <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-color)' }}>
-                          <div>
-                            <strong style={{ fontSize: '1.1rem', color: 'var(--text-color)' }}>{item.label}</strong> 
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <strong style={{ fontSize: '1.1rem', color: 'var(--text-color)', textDecoration: item.isPublished === false ? 'line-through' : 'none', opacity: item.isPublished === false ? 0.6 : 1 }}>{item.label}</strong> 
+                            {item.isPublished === false && <span style={{ fontSize: '0.7rem', background: '#e2e8f0', color: '#475569', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>Hidden</span>}
                             <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                               {item.url}
                             </div>
                           </div>
-                          <button 
-                            onClick={() => handleDelete(item.id)} 
-                            style={{ color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                          >
-                            <Trash2 size={16}/> Delete
-                          </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <button 
+                              onClick={() => togglePublish(item.id, item.isPublished !== false)} 
+                              style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', transition: 'color 0.2s' }}
+                              onMouseEnter={(e) => e.currentTarget.style.color = '#f8fafc'}
+                              onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
+                              title={item.isPublished !== false ? "Unpublish/Hide" : "Publish/Show"}
+                            >
+                              {item.isPublished !== false ? <EyeOff size={18}/> : <Eye size={18}/>} 
+                              <span style={{ fontSize: '0.9rem' }}>{item.isPublished !== false ? 'Hide' : 'Show'}</span>
+                            </button>
+                            <button 
+                              onClick={() => handleEdit(item)} 
+                              style={{ color: 'var(--icon-color)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                            >
+                              <Edit size={16}/> Edit
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(item.id)} 
+                              style={{ color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                            >
+                              <Trash2 size={16}/> Delete
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>

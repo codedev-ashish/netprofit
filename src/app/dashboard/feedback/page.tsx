@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "../page.module.css";
-import { db, auth } from "../../../lib/firebase";
+import { db } from "../../../lib/firebase";
+import { auth } from "../../../lib/firebase-auth";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { Flag, MessageCircleQuestion, CheckCircle2 } from "lucide-react";
@@ -69,15 +70,15 @@ export default function FeedbackPage() {
               onClick={() => setType('feedback')}
               style={{ 
                 padding: '1.5rem', 
-                border: `2px solid ${type === 'feedback' ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                border: `2px solid ${type === 'feedback' ? 'var(--accent-color)' : 'var(--border-color)'}`,
                 borderRadius: '8px',
                 cursor: 'pointer',
                 textAlign: 'center',
-                backgroundColor: type === 'feedback' ? 'rgba(56, 189, 248, 0.05)' : 'transparent'
+                backgroundColor: type === 'feedback' ? 'rgba(249, 115, 22, 0.05)' : 'transparent'
               }}
             >
-              <MessageCircleQuestion size={32} color={type === 'feedback' ? 'var(--primary-color)' : 'var(--text-muted)'} style={{ margin: '0 auto 0.5rem auto' }} />
-              <h3 style={{ fontSize: '1rem' }}>General Feedback</h3>
+              <MessageCircleQuestion size={32} color={type === 'feedback' ? 'var(--accent-color)' : 'var(--text-muted)'} style={{ margin: '0 auto 0.5rem auto' }} />
+              <h3 style={{ fontSize: '1rem', color: type === 'feedback' ? 'var(--accent-color)' : 'inherit' }}>General Feedback</h3>
             </div>
             
             <div 

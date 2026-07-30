@@ -332,10 +332,13 @@ export default function LoanCalculator({
           {/* Amount */}
           <div className={styles.inputGroup}>
             <div className={styles.inputHeader}>
-              <label className={styles.label}>Home Loan Amount</label>
+              <label htmlFor="amount" className={styles.label}>Home Loan Amount</label>
               <div style={{display: 'flex', alignItems: 'center', background: 'var(--bg-secondary)', padding: '0.25rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)'}}>
                 <span style={{ fontWeight: 600, color: 'var(--text-muted)', marginRight: '0.5rem' }}>₹</span>
                 <input 
+                  id="amount"
+                  name="amount"
+                  aria-label="Home Loan Amount"
                   type="number" 
                   value={amount} 
                   onChange={(e) => setAmount(Number(e.target.value))}
@@ -346,6 +349,9 @@ export default function LoanCalculator({
             </div>
             <div className={styles.sliderContainer}>
               <input 
+                id="amountSlider"
+                name="amountSlider"
+                aria-label="Home Loan Amount Slider"
                 type="range" 
                 min="100000" 
                 max="20000000" 
@@ -360,9 +366,12 @@ export default function LoanCalculator({
           {/* Interest */}
           <div className={styles.inputGroup}>
             <div className={styles.inputHeader}>
-              <label className={styles.label}>Interest Rate</label>
+              <label htmlFor="rate" className={styles.label}>Interest Rate</label>
               <div style={{display: 'flex', alignItems: 'center', background: 'var(--bg-secondary)', padding: '0.25rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)'}}>
                 <input 
+                  id="rate"
+                  name="rate"
+                  aria-label="Interest Rate"
                   type="number" 
                   value={rate} 
                   step="0.1"
@@ -375,6 +384,9 @@ export default function LoanCalculator({
             </div>
             <div className={styles.sliderContainer}>
               <input 
+                id="rateSlider"
+                name="rateSlider"
+                aria-label="Interest Rate Slider"
                 type="range" 
                 min="5" 
                 max="20" 
@@ -389,9 +401,12 @@ export default function LoanCalculator({
           {/* Tenure */}
           <div className={styles.inputGroup}>
             <div className={styles.inputHeader}>
-              <label className={styles.label}>Loan Tenure</label>
+              <label htmlFor="tenure" className={styles.label}>Loan Tenure</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <input 
+                  id="tenure"
+                  name="tenure"
+                  aria-label="Loan Tenure"
                   type="number" 
                   value={tenure} 
                   onChange={(e) => setTenure(Number(e.target.value))}
@@ -406,6 +421,9 @@ export default function LoanCalculator({
             </div>
             <div className={styles.sliderContainer}>
               <input 
+                id="tenureSlider"
+                name="tenureSlider"
+                aria-label="Loan Tenure Slider"
                 type="range" 
                 min="1" 
                 max={tenureType === 'Yr' ? 30 : 360} 
@@ -420,9 +438,12 @@ export default function LoanCalculator({
           {/* Fees & Charges */}
           <div className={styles.inputGroup}>
             <div className={styles.inputHeader}>
-              <label className={styles.label}>Fees & Charges</label>
+              <label htmlFor="feesRate" className={styles.label}>Fees & Charges</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <input 
+                  id="feesRate"
+                  name="feesRate"
+                  aria-label="Fees & Charges"
                   type="number" 
                   value={feesType === '%' ? Number(feesRate.toFixed(2)) : Math.round(amount * (feesRate / 100))} 
                   step={feesType === '%' ? "0.1" : "100"}
@@ -442,6 +463,9 @@ export default function LoanCalculator({
             </div>
             <div className={styles.sliderContainer}>
               <input 
+                id="feesRateSlider"
+                name="feesRateSlider"
+                aria-label="Fees & Charges Slider"
                 type="range" 
                 min="0" 
                 max="5" 
@@ -458,19 +482,19 @@ export default function LoanCalculator({
         {/* Right: Results & Chart */}
         <div className={styles.resultSection}>
           <div className={styles.resultCard} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' }}>Loan EMI</div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#fff', paddingBottom: '1.5rem', borderBottom: '1px dashed rgba(255,255,255,0.3)' }}>{formatCurrency(emi)}</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--rc-muted)', marginBottom: '0.5rem' }}>Loan EMI</div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--rc-text)', paddingBottom: '1.5rem', borderBottom: 'var(--rc-border-dashed)' }}>{formatCurrency(emi)}</div>
 
-            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem', marginTop: '1.5rem' }}>Loan APR</div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#fff', paddingBottom: '1.5rem', borderBottom: '1px dashed rgba(255,255,255,0.3)' }}>{apr.toFixed(2)} %</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--rc-muted)', marginBottom: '0.5rem', marginTop: '1.5rem' }}>Loan APR</div>
+            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--rc-text)', paddingBottom: '1.5rem', borderBottom: 'var(--rc-border-dashed)' }}>{apr.toFixed(2)} %</div>
             
-            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem', marginTop: '1.5rem' }}>Total Interest Payable</div>
-            <div style={{ fontSize: '2rem', fontWeight: 700, color: '#fff', paddingBottom: '1.5rem', borderBottom: '1px dashed rgba(255,255,255,0.3)' }}>{formatCurrency(totalInterest)}</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--rc-muted)', marginBottom: '0.5rem', marginTop: '1.5rem' }}>Total Interest Payable</div>
+            <div style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--rc-text)', paddingBottom: '1.5rem', borderBottom: 'var(--rc-border-dashed)' }}>{formatCurrency(totalInterest)}</div>
             
-            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem', marginTop: '1.5rem' }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--rc-muted)', marginBottom: '0.5rem', marginTop: '1.5rem' }}>
               Total Payment <br/> <span style={{fontSize: '0.9rem', fontWeight: 400}}>(Principal + Interest + Fees & Charges)</span>
             </div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#fff' }}>{formatCurrency(totalPayment)}</div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--rc-text)' }}>{formatCurrency(totalPayment)}</div>
           </div>
 
         </div>
@@ -546,11 +570,11 @@ export default function LoanCalculator({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--bg-secondary)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>Schedule Start Date:</span>
-              <select className={styles.dateSelect} value={startMonth} onChange={(e) => setStartMonth(Number(e.target.value))}>
+              <label htmlFor="startMonth" style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>Schedule Start Date:</label>
+              <select id="startMonth" name="startMonth" aria-label="Start Month" className={styles.dateSelect} value={startMonth} onChange={(e) => setStartMonth(Number(e.target.value))}>
                 {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
               </select>
-              <select className={styles.dateSelect} value={startYear} onChange={(e) => setStartYear(Number(e.target.value))}>
+              <select id="startYear" name="startYear" aria-label="Start Year" className={styles.dateSelect} value={startYear} onChange={(e) => setStartYear(Number(e.target.value))}>
                 {Array.from({length: 20}).map((_, i) => {
                   const y = new Date().getFullYear() - 5 + i;
                   return <option key={y} value={y}>{y}</option>;

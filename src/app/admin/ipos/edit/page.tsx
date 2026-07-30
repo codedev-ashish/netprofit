@@ -17,6 +17,7 @@ export default function EditIPOForm() {
   const [activeTab, setActiveTab] = useState('general');
   const [formData, setFormData] = useState<IPOData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,7 +31,76 @@ export default function EditIPOForm() {
         const docRef = doc(db, "ipos", id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setFormData(docSnap.data() as IPOData);
+          const data = docSnap.data() as IPOData;
+          if (!data.valuationFields && data.valuation) {
+            data.valuationFields = [
+              { id: 'eps', label: 'EPS', value: data.valuation.eps?.toString() || '' },
+              { id: 'pe', label: 'P/E Ratio', value: data.valuation.pe?.toString() || '' },
+              { id: 'industryPe', label: 'Industry P/E', value: data.valuation.industryPe?.toString() || '' },
+              { id: 'marketCap', label: 'Market Cap (Cr)', value: data.valuation.marketCap?.toString() || '' },
+              { id: 'ronw', label: 'RONW (%)', value: data.valuation.ronw?.toString() || '' },
+              { id: 'nav', label: 'NAV', value: data.valuation.nav?.toString() || '' }
+            ];
+          }
+          if (!data.financialTable) {
+            data.financialTable = {
+              columns: [
+                { id: 'year', label: 'Year' },
+                { id: 'revenue', label: 'Revenue (Cr)' },
+                { id: 'expense', label: 'Expense (Cr)' },
+                { id: 'profit', label: 'Profit (Cr)' },
+                { id: 'assets', label: 'Assets (Cr)' },
+                { id: 'networth', label: 'Net Worth (Cr)' }
+              ],
+              rows: (data.financials || []).map(fy => ({
+                id: `row_${Date.now()}_${Math.random()}`,
+                values: {
+                  year: fy.year || '',
+                  revenue: fy.revenue?.toString() || '0',
+                  expense: fy.expense?.toString() || '0',
+                  profit: fy.profit?.toString() || '0',
+                  assets: fy.assets?.toString() || '0',
+                  networth: fy.netWorth?.toString() || '0'
+                }
+              }))
+            };
+          }
+          if (!data.timelineFields && data.timeline) {
+            data.timelineFields = [
+              { id: 'openDate', label: 'Open Date', value: data.timeline.openDate || '' },
+              { id: 'closeDate', label: 'Close Date', value: data.timeline.closeDate || '' },
+              { id: 'basisOfAllotment', label: 'Basis of Allotment', value: data.timeline.basisOfAllotment || '' },
+              { id: 'initiationOfRefunds', label: 'Initiation of Refunds', value: data.timeline.initiationOfRefunds || '' },
+              { id: 'creditOfShares', label: 'Credit of Shares', value: data.timeline.creditOfShares || '' },
+              { id: 'listingDate', label: 'Listing Date', value: data.timeline.listingDate || '' }
+            ];
+          }
+          if (!data.issueDetailsFields) {
+            data.issueDetailsFields = [
+              { id: 'priceBandLow', label: 'Price Band Low', value: data.priceBandLow?.toString() || '' },
+              { id: 'priceBandHigh', label: 'Price Band High', value: data.priceBandHigh?.toString() || '' },
+              { id: 'faceValue', label: 'Face Value', value: data.faceValue?.toString() || '' },
+              { id: 'lotSize', label: 'Lot Size', value: data.lotSize?.toString() || '' },
+              { id: 'issueSize', label: 'Issue Size (Cr)', value: data.issueSize?.toString() || '' },
+              { id: 'listedPrice', label: 'Listed Price (₹)', value: data.listedPrice?.toString() || '' }
+            ];
+          }
+          if (!data.subscriptionFields) {
+            data.subscriptionFields = [
+              { id: 'qib', label: 'QIB Sub', value: data.subscriptionStatus?.qib?.toString() || '0' },
+              { id: 'nii', label: 'NII Sub', value: data.subscriptionStatus?.nii?.toString() || '0' },
+              { id: 'retail', label: 'Retail Sub', value: data.subscriptionStatus?.retail?.toString() || '0' },
+              { id: 'total', label: 'Total Sub', value: data.subscriptionStatus?.total?.toString() || '0' }
+            ];
+          }
+          if (!data.quotaFields) {
+            data.quotaFields = [
+              { id: 'qibQuota', label: 'QIB Quota (%)', value: data.quota?.qib?.toString() || '50' },
+              { id: 'niiQuota', label: 'NII Quota (%)', value: data.quota?.nii?.toString() || '15' },
+              { id: 'retailQuota', label: 'Retail Quota (%)', value: data.quota?.retail?.toString() || '35' }
+            ];
+          }
+          setFormData(data);
         } else {
           alert("No such IPO document!");
           router.push('/admin/ipos');
@@ -56,6 +126,38 @@ export default function EditIPOForm() {
       }
       return newData;
     });
+  };
+
+  const handleOptimizeSEO = async () => {
+    if (!formData || !formData.description) {
+      alert("Please add some description about the company first to generate SEO.");
+      return;
+    }
+    setIsOptimizing(true);
+    try {
+      const res = await fetch("/api/ai/generate-seo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: formData.name, content: formData.description, type: "IPO listing" })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate SEO");
+
+      setFormData(prev => ({
+        ...prev!,
+        metaTitle: data.metaTitle || prev!.metaTitle,
+        metaDescription: data.metaDescription || prev!.metaDescription,
+        seoKeywords: data.seoKeywords || prev!.seoKeywords,
+        description: data.optimizedContent || prev!.description
+      }));
+
+      alert("AI successfully optimized the SEO and injected contextual links!");
+    } catch (error: any) {
+      console.error(error);
+      alert("SEO Optimization failed: " + error.message);
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
   const handleAddCustomTab = () => {
@@ -261,26 +363,76 @@ export default function EditIPOForm() {
     }
   };
 
-  const addFinancialYear = () => {
+  const addFinancialColumn = () => {
     if (!formData) return;
+    const newColId = `col_${Date.now()}`;
     setFormData(prev => ({
       ...prev!,
-      financials: [...prev!.financials, { year: '', revenue: 0, expense: 0, profit: 0, assets: 0, netWorth: 0, reserves: 0, debt: 0 }]
+      financialTable: {
+        columns: [...(prev!.financialTable?.columns || []), { id: newColId, label: 'New Column' }],
+        rows: prev!.financialTable?.rows || []
+      }
     }));
   };
 
-  const updateFinancialYear = (index: number, field: string, value: any) => {
+  const updateFinancialColumn = (index: number, label: string) => {
     if (!formData) return;
-    const newFinancials = [...formData.financials];
-    newFinancials[index] = { ...newFinancials[index], [field]: value };
-    setFormData(prev => ({ ...prev!, financials: newFinancials }));
+    const newCols = [...(formData.financialTable?.columns || [])];
+    newCols[index] = { ...newCols[index], label };
+    setFormData(prev => ({
+      ...prev!,
+      financialTable: { ...prev!.financialTable!, columns: newCols }
+    }));
   };
 
-  const removeFinancialYear = (index: number) => {
+  const removeFinancialColumn = (index: number) => {
+    if (!formData) return;
+    const colToRemove = formData.financialTable?.columns[index];
+    if (!colToRemove) return;
+    const newCols = formData.financialTable!.columns.filter((_, i) => i !== index);
+    const newRows = (formData.financialTable?.rows || []).map(r => {
+      const newVals = { ...r.values };
+      delete newVals[colToRemove.id];
+      return { ...r, values: newVals };
+    });
+    setFormData(prev => ({
+      ...prev!,
+      financialTable: { columns: newCols, rows: newRows }
+    }));
+  };
+
+  const addFinancialRow = () => {
     if (!formData) return;
     setFormData(prev => ({
       ...prev!,
-      financials: prev!.financials.filter((_, i) => i !== index)
+      financialTable: {
+        columns: prev!.financialTable?.columns || [],
+        rows: [...(prev!.financialTable?.rows || []), { id: `row_${Date.now()}`, values: {} }]
+      }
+    }));
+  };
+
+  const updateFinancialCell = (rowIdx: number, colId: string, value: string) => {
+    if (!formData) return;
+    const newRows = [...(formData.financialTable?.rows || [])];
+    newRows[rowIdx] = {
+      ...newRows[rowIdx],
+      values: { ...newRows[rowIdx].values, [colId]: value }
+    };
+    setFormData(prev => ({
+      ...prev!,
+      financialTable: { ...prev!.financialTable!, rows: newRows }
+    }));
+  };
+
+  const removeFinancialRow = (rowIdx: number) => {
+    if (!formData) return;
+    setFormData(prev => ({
+      ...prev!,
+      financialTable: {
+        columns: prev!.financialTable?.columns || [],
+        rows: (prev!.financialTable?.rows || []).filter((_, i) => i !== rowIdx)
+      }
     }));
   };
 
@@ -304,6 +456,121 @@ export default function EditIPOForm() {
     setFormData(prev => ({
       ...prev!,
       gmpHistory: (prev!.gmpHistory || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const addValuationField = () => {
+    if (!formData) return;
+    setFormData(prev => ({
+      ...prev!,
+      valuationFields: [...(prev!.valuationFields || []), { id: `val_${Date.now()}`, label: '', value: '' }]
+    }));
+  };
+
+  const updateValuationField = (index: number, key: 'label' | 'value', value: string) => {
+    if (!formData) return;
+    const newFields = [...(formData.valuationFields || [])];
+    newFields[index] = { ...newFields[index], [key]: value };
+    setFormData(prev => ({ ...prev!, valuationFields: newFields }));
+  };
+
+  const removeValuationField = (index: number) => {
+    if (!formData) return;
+    setFormData(prev => ({
+      ...prev!,
+      valuationFields: (prev!.valuationFields || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const addTimelineField = () => {
+    if (!formData) return;
+    setFormData(prev => ({
+      ...prev!,
+      timelineFields: [...(prev!.timelineFields || []), { id: `tl_${Date.now()}`, label: 'New Event', value: '' }]
+    }));
+  };
+
+  const updateTimelineField = (index: number, key: 'label' | 'value', value: string) => {
+    if (!formData) return;
+    const newFields = [...(formData.timelineFields || [])];
+    newFields[index] = { ...newFields[index], [key]: value };
+    setFormData(prev => ({ ...prev!, timelineFields: newFields }));
+  };
+
+  const removeTimelineField = (index: number) => {
+    if (!formData) return;
+    setFormData(prev => ({
+      ...prev!,
+      timelineFields: (prev!.timelineFields || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const addIssueDetailField = () => {
+    if (!formData) return;
+    setFormData(prev => ({
+      ...prev!,
+      issueDetailsFields: [...(prev!.issueDetailsFields || []), { id: `id_${Date.now()}`, label: 'New Field', value: '' }]
+    }));
+  };
+
+  const updateIssueDetailField = (index: number, key: 'label' | 'value', value: string) => {
+    if (!formData) return;
+    const newFields = [...(formData.issueDetailsFields || [])];
+    newFields[index] = { ...newFields[index], [key]: value };
+    setFormData(prev => ({ ...prev!, issueDetailsFields: newFields }));
+  };
+
+  const removeIssueDetailField = (index: number) => {
+    if (!formData) return;
+    setFormData(prev => ({
+      ...prev!,
+      issueDetailsFields: (prev!.issueDetailsFields || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const addSubscriptionField = () => {
+    if (!formData) return;
+    setFormData(prev => ({
+      ...prev!,
+      subscriptionFields: [...(prev!.subscriptionFields || []), { id: `sub_${Date.now()}`, label: 'New Field', value: '' }]
+    }));
+  };
+
+  const updateSubscriptionField = (index: number, key: 'label' | 'value', value: string) => {
+    if (!formData) return;
+    const newFields = [...(formData.subscriptionFields || [])];
+    newFields[index] = { ...newFields[index], [key]: value };
+    setFormData(prev => ({ ...prev!, subscriptionFields: newFields }));
+  };
+
+  const removeSubscriptionField = (index: number) => {
+    if (!formData) return;
+    setFormData(prev => ({
+      ...prev!,
+      subscriptionFields: (prev!.subscriptionFields || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const addQuotaField = () => {
+    if (!formData) return;
+    setFormData(prev => ({
+      ...prev!,
+      quotaFields: [...(prev!.quotaFields || []), { id: `q_${Date.now()}`, label: 'New Quota', value: '' }]
+    }));
+  };
+
+  const updateQuotaField = (index: number, key: 'label' | 'value', value: string) => {
+    if (!formData) return;
+    const newFields = [...(formData.quotaFields || [])];
+    newFields[index] = { ...newFields[index], [key]: value };
+    setFormData(prev => ({ ...prev!, quotaFields: newFields }));
+  };
+
+  const removeQuotaField = (index: number) => {
+    if (!formData) return;
+    setFormData(prev => ({
+      ...prev!,
+      quotaFields: (prev!.quotaFields || []).filter((_, i) => i !== index)
     }));
   };
 
@@ -355,7 +622,7 @@ export default function EditIPOForm() {
               )}
             </div>
           ))}
-          <button type="button" onClick={handleAddCustomTab} style={{...getTabStyle('new'), color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+          <button type="button" onClick={handleAddCustomTab} style={{...getTabStyle('new'), color: 'var(--icon-color)', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
             <Plus size={16} /> New Tab
           </button>
         </div>
@@ -375,6 +642,57 @@ export default function EditIPOForm() {
                 <div className={styles.inputGroup}>
                   <label>Symbol</label>
                   <input required name="symbol" value={formData.symbol || ''} onChange={handleChange} className={styles.inputField} />
+                </div>
+                <div className={styles.inputGroup}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
+                    <label style={{ marginBottom: 0 }}>Custom SEO Meta Title (Optional)</label>
+                    <button 
+                      type="button" 
+                      onClick={handleOptimizeSEO} 
+                      disabled={isOptimizing || !formData.description}
+                      style={{ 
+                        background: 'linear-gradient(135deg, #a855f7, #7e22ce)', 
+                        border: 'none', 
+                        color: 'white', 
+                        padding: '0.4rem 0.8rem', 
+                        borderRadius: '4px', 
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem'
+                      }}
+                    >
+                      {isOptimizing ? "Optimizing..." : "✨ AI Optimize SEO & Links"}
+                    </button>
+                  </div>
+                  <input name="metaTitle" value={formData.metaTitle || ''} onChange={handleChange} placeholder="Custom SEO Title" className={styles.inputField} />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label>Custom SEO Meta Description (Optional)</label>
+                  <textarea name="metaDescription" value={formData.metaDescription || ''} onChange={handleChange} placeholder="Custom SEO Description..." rows={3} className={styles.inputField} />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label>SEO Keywords (Comma-separated)</label>
+                  <input 
+                    name="seoKeywords"
+                    value={formData.seoKeywords || ''} 
+                    onChange={handleChange} 
+                    placeholder="e.g. IPO listing, share price" 
+                    className={styles.inputField} 
+                  />
+                </div>
+                <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+                  <label>Custom Schema (JSON-LD) (Optional)</label>
+                  <textarea 
+                    name="customSchema"
+                    rows={4} 
+                    value={formData.customSchema || ''} 
+                    onChange={handleChange} 
+                    placeholder='{"@context": "https://schema.org", "@type": "FinancialProduct", ...}' 
+                    className={styles.inputField} 
+                    style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}
+                  />
                 </div>
                 <div className={styles.inputGroup}>
                   <label>IPO Type</label>
@@ -403,31 +721,35 @@ export default function EditIPOForm() {
 
           {activeTab === 'timeline' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-color)' }}>Timeline Events</h3>
+                <button type="button" onClick={addTimelineField} style={{ background: 'var(--primary-color)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                  <Plus size={14} /> Add Event
+                </button>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className={styles.inputGroup}>
-                  <label>Open Date</label>
-                  <input type="date" value={formData.timeline?.openDate || ''} onChange={(e) => handleNestedChange('timeline', 'openDate', e.target.value)} className={styles.inputField} />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Close Date</label>
-                  <input type="date" value={formData.timeline?.closeDate || ''} onChange={(e) => handleNestedChange('timeline', 'closeDate', e.target.value)} className={styles.inputField} />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Basis of Allotment</label>
-                  <input type="date" value={formData.timeline?.basisOfAllotment || ''} onChange={(e) => handleNestedChange('timeline', 'basisOfAllotment', e.target.value)} className={styles.inputField} />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Initiation of Refunds</label>
-                  <input type="date" value={formData.timeline?.initiationOfRefunds || ''} onChange={(e) => handleNestedChange('timeline', 'initiationOfRefunds', e.target.value)} className={styles.inputField} />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Credit of Shares</label>
-                  <input type="date" value={formData.timeline?.creditOfShares || ''} onChange={(e) => handleNestedChange('timeline', 'creditOfShares', e.target.value)} className={styles.inputField} />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Listing Date</label>
-                  <input type="date" value={formData.timeline?.listingDate || ''} onChange={(e) => handleNestedChange('timeline', 'listingDate', e.target.value)} className={styles.inputField} />
-                </div>
+                {(formData.timelineFields || []).map((field, index) => (
+                  <div key={field.id} className={styles.inputGroup} style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <input 
+                        type="text" 
+                        value={field.label} 
+                        onChange={(e) => updateTimelineField(index, 'label', e.target.value)} 
+                        placeholder="Event Name (e.g. Open Date)"
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', fontWeight: 'bold', fontSize: '0.9rem', outline: 'none', width: '80%' }}
+                      />
+                      <button type="button" onClick={() => removeTimelineField(index)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                        <Trash size={16} />
+                      </button>
+                    </div>
+                    <input 
+                      type="date" 
+                      value={field.value} 
+                      onChange={(e) => updateTimelineField(index, 'value', e.target.value)} 
+                      className={styles.inputField} 
+                    />
+                  </div>
+                ))}
               </div>
               {renderCustomFields('timeline')}
             </div>
@@ -435,31 +757,36 @@ export default function EditIPOForm() {
 
           {activeTab === 'price' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-color)' }}>Issue Details (Price & Size)</h3>
+                <button type="button" onClick={addIssueDetailField} style={{ background: 'var(--primary-color)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                  <Plus size={14} /> Add Field
+                </button>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                <div className={styles.inputGroup}>
-                  <label>Price Band Low</label>
-                  <input type="number" name="priceBandLow" value={formData.priceBandLow || ''} onChange={handleChange} className={styles.inputField} />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Price Band High</label>
-                  <input type="number" name="priceBandHigh" value={formData.priceBandHigh || ''} onChange={handleChange} className={styles.inputField} />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Face Value</label>
-                  <input type="number" name="faceValue" value={formData.faceValue || ''} onChange={handleChange} className={styles.inputField} />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Lot Size</label>
-                  <input type="number" name="lotSize" value={formData.lotSize} onChange={handleChange} className={styles.inputField} />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Issue Size (Cr)</label>
-                  <input type="number" name="issueSize" value={formData.issueSize} onChange={handleChange} className={styles.inputField} />
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Listed Price (₹)</label>
-                  <input type="number" name="listedPrice" value={formData.listedPrice || 0} onChange={handleChange} className={styles.inputField} />
-                </div>
+                {(formData.issueDetailsFields || []).map((field, index) => (
+                  <div key={field.id} className={styles.inputGroup} style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <input 
+                        type="text" 
+                        value={field.label} 
+                        onChange={(e) => updateIssueDetailField(index, 'label', e.target.value)} 
+                        placeholder="Field Name (e.g. Price Band High)"
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', fontWeight: 'bold', fontSize: '0.9rem', outline: 'none', width: '80%' }}
+                      />
+                      <button type="button" onClick={() => removeIssueDetailField(index)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                        <Trash size={16} />
+                      </button>
+                    </div>
+                    <input 
+                      type="text" 
+                      value={field.value} 
+                      onChange={(e) => updateIssueDetailField(index, 'value', e.target.value)} 
+                      className={styles.inputField} 
+                      placeholder="e.g. 192 or 100 Cr"
+                    />
+                  </div>
+                ))}
               </div>
 
               <div className={styles.sectionCard} style={{ padding: '1.5rem', background: 'transparent' }}>
@@ -491,42 +818,70 @@ export default function EditIPOForm() {
           {activeTab === 'subscription' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div className={styles.sectionCard} style={{ padding: '1.5rem', background: 'transparent' }}>
-                <h3 style={{ fontSize: '1.1rem', color: 'var(--text-color)', margin: '0 0 1rem 0' }}>Subscription Status (x times)</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-color)' }}>Subscription Status (x times)</h3>
+                  <button type="button" onClick={addSubscriptionField} style={{ background: 'var(--primary-color)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                    <Plus size={14} /> Add Field
+                  </button>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div className={styles.inputGroup}>
-                    <label>QIB Sub</label>
-                    <input type="number" step="0.01" value={formData.subscriptionStatus?.qib || 0} onChange={(e) => handleNestedChange('subscriptionStatus', 'qib', Number(e.target.value))} className={styles.inputField} />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>NII Sub</label>
-                    <input type="number" step="0.01" value={formData.subscriptionStatus?.nii || 0} onChange={(e) => handleNestedChange('subscriptionStatus', 'nii', Number(e.target.value))} className={styles.inputField} />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>Retail Sub</label>
-                    <input type="number" step="0.01" value={formData.subscriptionStatus?.retail || 0} onChange={(e) => handleNestedChange('subscriptionStatus', 'retail', Number(e.target.value))} className={styles.inputField} />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>Total Sub</label>
-                    <input type="number" step="0.01" value={formData.subscriptionStatus?.total || 0} onChange={(e) => handleNestedChange('subscriptionStatus', 'total', Number(e.target.value))} className={styles.inputField} />
-                  </div>
+                  {(formData.subscriptionFields || []).map((field, index) => (
+                    <div key={field.id} className={styles.inputGroup} style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <input 
+                          type="text" 
+                          value={field.label} 
+                          onChange={(e) => updateSubscriptionField(index, 'label', e.target.value)} 
+                          placeholder="Field Name"
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', fontWeight: 'bold', fontSize: '0.9rem', outline: 'none', width: '80%' }}
+                        />
+                        <button type="button" onClick={() => removeSubscriptionField(index)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                          <Trash size={16} />
+                        </button>
+                      </div>
+                      <input 
+                        type="text" 
+                        value={field.value} 
+                        onChange={(e) => updateSubscriptionField(index, 'value', e.target.value)} 
+                        className={styles.inputField} 
+                        placeholder="e.g. 1.25"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
               
               <div className={styles.sectionCard} style={{ padding: '1.5rem', background: 'transparent' }}>
-                <h3 style={{ fontSize: '1.1rem', color: 'var(--text-color)', margin: '0 0 1rem 0' }}>Quota (%)</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-color)' }}>Quota (%)</h3>
+                  <button type="button" onClick={addQuotaField} style={{ background: 'var(--primary-color)', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                    <Plus size={14} /> Add Field
+                  </button>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div className={styles.inputGroup}>
-                    <label>QIB Quota (%)</label>
-                    <input type="number" step="0.01" value={formData.quota?.qib || 0} onChange={(e) => handleNestedChange('quota', 'qib', Number(e.target.value))} className={styles.inputField} />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>NII Quota (%)</label>
-                    <input type="number" step="0.01" value={formData.quota?.nii || 0} onChange={(e) => handleNestedChange('quota', 'nii', Number(e.target.value))} className={styles.inputField} />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>Retail Quota (%)</label>
-                    <input type="number" step="0.01" value={formData.quota?.retail || 0} onChange={(e) => handleNestedChange('quota', 'retail', Number(e.target.value))} className={styles.inputField} />
-                  </div>
+                  {(formData.quotaFields || []).map((field, index) => (
+                    <div key={field.id} className={styles.inputGroup} style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <input 
+                          type="text" 
+                          value={field.label} 
+                          onChange={(e) => updateQuotaField(index, 'label', e.target.value)} 
+                          placeholder="Field Name"
+                          style={{ background: 'transparent', border: 'none', color: 'var(--text-color)', fontWeight: 'bold', fontSize: '0.9rem', outline: 'none', width: '80%' }}
+                        />
+                        <button type="button" onClick={() => removeQuotaField(index)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                          <Trash size={16} />
+                        </button>
+                      </div>
+                      <input 
+                        type="text" 
+                        value={field.value} 
+                        onChange={(e) => updateQuotaField(index, 'value', e.target.value)} 
+                        className={styles.inputField} 
+                        placeholder="e.g. 50"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
               {renderCustomFields('subscription')}
@@ -537,67 +892,62 @@ export default function EditIPOForm() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div className={styles.sectionCard} style={{ padding: '1.5rem', background: 'transparent' }}>
                 <h3 style={{ fontSize: '1.1rem', color: 'var(--text-color)', margin: '0 0 1rem 0' }}>Valuation Metrics</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-                  <div className={styles.inputGroup}>
-                    <label>EPS</label>
-                    <input type="number" step="0.01" value={formData.valuation?.eps || 0} onChange={(e) => handleNestedChange('valuation', 'eps', Number(e.target.value))} className={styles.inputField} />
+                {formData.valuationFields?.map((field, idx) => (
+                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '1rem', marginBottom: '1rem', alignItems: 'flex-end' }}>
+                    <div className={styles.inputGroup}>
+                      <label style={{fontSize: '0.8rem'}}>Label</label>
+                      <input value={field.label} onChange={(e) => updateValuationField(idx, 'label', e.target.value)} className={styles.inputField} placeholder="e.g. EPS" />
+                    </div>
+                    <div className={styles.inputGroup}>
+                      <label style={{fontSize: '0.8rem'}}>Value</label>
+                      <input value={field.value} onChange={(e) => updateValuationField(idx, 'value', e.target.value)} className={styles.inputField} placeholder="Value" />
+                    </div>
+                    <button type="button" onClick={() => removeValuationField(idx)} style={{ background: 'none', border: '1px solid #ef4444', color: '#ef4444', borderRadius: '6px', cursor: 'pointer', padding: '0.75rem', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Trash size={18} />
+                    </button>
                   </div>
-                  <div className={styles.inputGroup}>
-                    <label>P/E Ratio</label>
-                    <input type="number" step="0.01" value={formData.valuation?.pe || 0} onChange={(e) => handleNestedChange('valuation', 'pe', Number(e.target.value))} className={styles.inputField} />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>Industry P/E</label>
-                    <input type="number" step="0.01" value={formData.valuation?.industryPe || 0} onChange={(e) => handleNestedChange('valuation', 'industryPe', Number(e.target.value))} className={styles.inputField} />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>Market Cap (Cr)</label>
-                    <input type="number" step="0.01" value={formData.valuation?.marketCap || 0} onChange={(e) => handleNestedChange('valuation', 'marketCap', Number(e.target.value))} className={styles.inputField} />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>RONW (%)</label>
-                    <input type="number" step="0.01" value={formData.valuation?.ronw || 0} onChange={(e) => handleNestedChange('valuation', 'ronw', Number(e.target.value))} className={styles.inputField} />
-                  </div>
-                  <div className={styles.inputGroup}>
-                    <label>NAV</label>
-                    <input type="number" step="0.01" value={formData.valuation?.nav || 0} onChange={(e) => handleNestedChange('valuation', 'nav', Number(e.target.value))} className={styles.inputField} />
-                  </div>
-                </div>
+                ))}
+                <button type="button" onClick={addValuationField} style={{ background: 'none', border: '1px dashed var(--border-color)', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', color: '#60a5fa', width: '100%' }}>
+                  <Plus size={18} /> Add Valuation Field
+                </button>
               </div>
 
-              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-color)', margin: '0' }}>Financial Records</h3>
-              {formData.financials?.map((fy, idx) => (
-                <div key={idx} style={{ border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px', background: 'var(--bg-secondary)', position: 'relative' }}>
-                  <button type="button" onClick={() => removeFinancialYear(idx)} style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><Trash size={16} /></button>
+              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-color)', margin: '0' }}>Financial Records Columns</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
+                {formData.financialTable?.columns.map((col, idx) => (
+                  <div key={col.id} style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
+                    <input 
+                      value={col.label} 
+                      onChange={(e) => updateFinancialColumn(idx, e.target.value)}
+                      style={{ border: 'none', background: 'transparent', padding: '0.5rem', color: 'var(--text-color)', width: '120px' }}
+                    />
+                    <button type="button" onClick={() => removeFinancialColumn(idx)} style={{ background: 'none', border: 'none', borderLeft: '1px solid var(--border-color)', color: '#ef4444', padding: '0.5rem', cursor: 'pointer' }}><Trash size={14}/></button>
+                  </div>
+                ))}
+                <button type="button" onClick={addFinancialColumn} style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-color)', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', color: 'var(--icon-color)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <Plus size={14} /> Add Column
+                </button>
+              </div>
+
+              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-color)', margin: '0' }}>Financial Records Data</h3>
+              {formData.financialTable?.rows.map((row, rowIdx) => (
+                <div key={row.id} style={{ border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px', background: 'var(--bg-secondary)', position: 'relative', marginBottom: '1rem' }}>
+                  <button type="button" onClick={() => removeFinancialRow(rowIdx)} style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><Trash size={16} /></button>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '1rem' }}>
-                    <div className={styles.inputGroup}>
-                      <label style={{fontSize: '0.8rem'}}>Year</label>
-                      <input value={fy.year} onChange={(e) => updateFinancialYear(idx, 'year', e.target.value)} className={styles.inputField} placeholder="e.g. FY23" />
-                    </div>
-                    <div className={styles.inputGroup}>
-                      <label style={{fontSize: '0.8rem'}}>Revenue (Cr)</label>
-                      <input type="number" step="0.01" value={fy.revenue || 0} onChange={(e) => updateFinancialYear(idx, 'revenue', parseFloat(e.target.value))} className={styles.inputField} />
-                    </div>
-                    <div className={styles.inputGroup}>
-                      <label style={{fontSize: '0.8rem'}}>Expense (Cr)</label>
-                      <input type="number" step="0.01" value={fy.expense || 0} onChange={(e) => updateFinancialYear(idx, 'expense', parseFloat(e.target.value))} className={styles.inputField} />
-                    </div>
-                    <div className={styles.inputGroup}>
-                      <label style={{fontSize: '0.8rem'}}>Profit (Cr)</label>
-                      <input type="number" step="0.01" value={fy.profit || 0} onChange={(e) => updateFinancialYear(idx, 'profit', parseFloat(e.target.value))} className={styles.inputField} />
-                    </div>
-                    <div className={styles.inputGroup}>
-                      <label style={{fontSize: '0.8rem'}}>Assets (Cr)</label>
-                      <input type="number" step="0.01" value={fy.assets || 0} onChange={(e) => updateFinancialYear(idx, 'assets', parseFloat(e.target.value))} className={styles.inputField} />
-                    </div>
-                    <div className={styles.inputGroup}>
-                      <label style={{fontSize: '0.8rem'}}>Net Worth (Cr)</label>
-                      <input type="number" step="0.01" value={fy.netWorth || 0} onChange={(e) => updateFinancialYear(idx, 'netWorth', parseFloat(e.target.value))} className={styles.inputField} />
-                    </div>
+                    {formData.financialTable?.columns.map(col => (
+                      <div key={col.id} className={styles.inputGroup}>
+                        <label style={{fontSize: '0.8rem'}}>{col.label}</label>
+                        <input 
+                          value={row.values[col.id] || ''} 
+                          onChange={(e) => updateFinancialCell(rowIdx, col.id, e.target.value)} 
+                          className={styles.inputField} 
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
-              <button type="button" onClick={addFinancialYear} style={{ background: 'none', border: '1px dashed var(--border-color)', padding: '1rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-color)' }}>
+              <button type="button" onClick={addFinancialRow} style={{ background: 'none', border: '1px dashed var(--border-color)', padding: '1rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', color: '#60a5fa', width: '100%' }}>
                 <Plus size={18} /> Add Financial Year
               </button>
               {renderCustomFields('financials')}

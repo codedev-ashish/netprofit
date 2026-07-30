@@ -57,8 +57,11 @@ export default function ToolsPage() {
             <h2 className={styles.sectionTitle}>Basic Details</h2>
             <div className={styles.formGrid}>
               <div className={styles.inputGroup}>
-                <label>Applicable Act</label>
+                <label htmlFor="applicableAct">Applicable Act</label>
                 <select
+                  id="applicableAct"
+                  name="applicableAct"
+                  aria-label="Applicable Act"
                   className={styles.inputField}
                   value={(params as any).applicableAct || "1961"}
                   onChange={(e) => handleInputChange('applicableAct' as any, e.target.value)}
@@ -68,8 +71,11 @@ export default function ToolsPage() {
                 </select>
               </div>
               <div className={styles.inputGroup}>
-                <label>{(params as any).applicableAct === "2025" ? "Tax Year" : "Assessment Year"}</label>
+                <label htmlFor="period">{(params as any).applicableAct === "2025" ? "Tax Year" : "Assessment Year"}</label>
                 <select
+                  id="period"
+                  name="period"
+                  aria-label="Assessment Year"
                   className={styles.inputField}
                   value={(params as any).period}
                   onChange={(e) => handleInputChange('period' as any, e.target.value)}
@@ -86,8 +92,11 @@ export default function ToolsPage() {
                 </select>
               </div>
               <div className={styles.inputGroup}>
-                <label>Taxpayer Category</label>
+                <label htmlFor="taxpayerCategory">Taxpayer Category</label>
                 <select
+                  id="taxpayerCategory"
+                  name="taxpayerCategory"
+                  aria-label="Taxpayer Category"
                   className={styles.inputField}
                   value={(params as any).taxpayerCategory || "Individual"}
                   onChange={(e) => handleInputChange('taxpayerCategory' as any, e.target.value)}
@@ -102,8 +111,11 @@ export default function ToolsPage() {
                 </select>
               </div>
               <div className={styles.inputGroup}>
-                <label>Age Status</label>
+                <label htmlFor="age">Age Status</label>
                 <select
+                  id="age"
+                  name="age"
+                  aria-label="Age Status"
                   className={styles.inputField}
                   value={params.age}
                   onChange={(e) => handleInputChange('age', e.target.value)}
@@ -114,8 +126,11 @@ export default function ToolsPage() {
                 </select>
               </div>
               <div className={styles.inputGroup}>
-                <label>Residential Status</label>
+                <label htmlFor="residentialStatus">Residential Status</label>
                 <select
+                  id="residentialStatus"
+                  name="residentialStatus"
+                  aria-label="Residential Status"
                   className={styles.inputField}
                   value={(params as any).residentialStatus || "RES"}
                   onChange={(e) => handleInputChange('residentialStatus' as any, e.target.value)}
@@ -130,40 +145,40 @@ export default function ToolsPage() {
             <h2 className={styles.sectionTitle}>Income Details (₹)</h2>
             <div className={styles.formGrid}>
               <div className={styles.inputGroup}>
-                <label>Gross Salary</label>
-                <input type="number" min="0" className={styles.inputField} value={params.grossSalary || ''} onChange={(e) => handleInputChange('grossSalary', Number(e.target.value))} placeholder="0" />
+                <label htmlFor="grossSalary">Gross Salary</label>
+                <input id="grossSalary" name="grossSalary" aria-label="Gross Salary" type="number" min="0" className={styles.inputField} value={params.grossSalary || ''} onChange={(e) => handleInputChange('grossSalary', Number(e.target.value))} placeholder="0" />
               </div>
               <div className={styles.inputGroup}>
-                <label>Income from House Property</label>
-                <input type="number" min="0" className={styles.inputField} value={params.houseProperty || ''} onChange={(e) => handleInputChange('houseProperty', Number(e.target.value))} placeholder="0" />
+                <label htmlFor="houseProperty">Income from House Property</label>
+                <input id="houseProperty" name="houseProperty" aria-label="Income from House Property" type="number" min="0" className={styles.inputField} value={params.houseProperty || ''} onChange={(e) => handleInputChange('houseProperty', Number(e.target.value))} placeholder="0" />
               </div>
               <div className={styles.inputGroup}>
-                <label>Income from Capital Gains</label>
-                <input type="number" min="0" className={styles.inputField} value={params.capitalGains || ''} onChange={(e) => handleInputChange('capitalGains', Number(e.target.value))} placeholder="0" />
+                <label htmlFor="capitalGains">Income from Capital Gains</label>
+                <input id="capitalGains" name="capitalGains" aria-label="Income from Capital Gains" type="number" min="0" className={styles.inputField} value={params.capitalGains || ''} onChange={(e) => handleInputChange('capitalGains', Number(e.target.value))} placeholder="0" />
               </div>
               <div className={styles.inputGroup}>
-                <label>Income from Other Sources</label>
-                <input type="number" min="0" className={styles.inputField} value={params.otherSources || ''} onChange={(e) => handleInputChange('otherSources', Number(e.target.value))} placeholder="0" />
+                <label htmlFor="otherSources">Income from Other Sources</label>
+                <input id="otherSources" name="otherSources" aria-label="Income from Other Sources" type="number" min="0" className={styles.inputField} value={params.otherSources || ''} onChange={(e) => handleInputChange('otherSources', Number(e.target.value))} placeholder="0" />
               </div>
             </div>
 
             <h2 className={styles.sectionTitle}>Deductions (₹) - Applicable to Old Regime</h2>
             <div className={styles.formGrid}>
               <div className={styles.inputGroup}>
-                <label>Basic Deductions (80C, 80CCC, 80CCD)</label>
-                <input type="number" min="0" className={styles.inputField} value={params.deduction80C || ''} onChange={(e) => handleInputChange('deduction80C', Number(e.target.value))} placeholder="0 (Max ₹1.5L)" />
+                <label htmlFor="deduction80C">Basic Deductions (80C, 80CCC, 80CCD)</label>
+                <input id="deduction80C" name="deduction80C" aria-label="Basic Deductions" type="number" min="0" className={styles.inputField} value={params.deduction80C || ''} onChange={(e) => handleInputChange('deduction80C', Number(e.target.value))} placeholder="0 (Max ₹1.5L)" />
               </div>
               <div className={styles.inputGroup}>
-                <label>Medical Insurance (80D)</label>
-                <input type="number" min="0" className={styles.inputField} value={params.deduction80D || ''} onChange={(e) => handleInputChange('deduction80D', Number(e.target.value))} placeholder="0" />
+                <label htmlFor="deduction80D">Medical Insurance (80D)</label>
+                <input id="deduction80D" name="deduction80D" aria-label="Medical Insurance" type="number" min="0" className={styles.inputField} value={params.deduction80D || ''} onChange={(e) => handleInputChange('deduction80D', Number(e.target.value))} placeholder="0" />
               </div>
               <div className={styles.inputGroup}>
-                <label>Donations (80G)</label>
-                <input type="number" min="0" className={styles.inputField} value={params.deduction80G || ''} onChange={(e) => handleInputChange('deduction80G', Number(e.target.value))} placeholder="0" />
+                <label htmlFor="deduction80G">Donations (80G)</label>
+                <input id="deduction80G" name="deduction80G" aria-label="Donations" type="number" min="0" className={styles.inputField} value={params.deduction80G || ''} onChange={(e) => handleInputChange('deduction80G', Number(e.target.value))} placeholder="0" />
               </div>
               <div className={styles.inputGroup}>
-                <label>Other Deductions (Chapter VI-A)</label>
-                <input type="number" min="0" className={styles.inputField} value={params.deductionOther || ''} onChange={(e) => handleInputChange('deductionOther', Number(e.target.value))} placeholder="0" />
+                <label htmlFor="deductionOther">Other Deductions (Chapter VI-A)</label>
+                <input id="deductionOther" name="deductionOther" aria-label="Other Deductions" type="number" min="0" className={styles.inputField} value={params.deductionOther || ''} onChange={(e) => handleInputChange('deductionOther', Number(e.target.value))} placeholder="0" />
               </div>
             </div>
 

@@ -1,11 +1,14 @@
 "use client";
 
+import Loader from "../../components/Loader";
+
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, ShoppingBag, Settings, LogOut, Building2, MessageSquare, Flag, UserCog, Newspaper } from "lucide-react";
 import styles from "./layout.module.css";
-import { auth, db } from "../../lib/firebase";
+import { db } from "../../lib/firebase";
+import { auth } from "../../lib/firebase-auth";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -13,15 +16,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         try {
           const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-          if (userDoc.exists() && userDoc.data().isAdmin) {
-            router.push("/admin/dashboard");
-            return;
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            if (data.isAdmin) {
+              router.push("/admin/dashboard");
+              return;
+            }
+            setUser({ id: currentUser.uid, ...data });
           }
         } catch (error) {
           console.error("Error checking admin status:", error);
@@ -40,11 +48,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   if (loading) {
-    return <div style={{ padding: "4rem", textAlign: "center" }}>Loading your panel...</div>;
+    return <Loader text="Loading your panel..." />;
   }
 
   return (
-    <div className={styles.dashboardLayout}>
+    <div className={styles.dashboardLayout} data-theme="dark">
       <aside className={styles.sidebar}>
         <h2 className={styles.sidebarTitle}>User Panel</h2>
         
@@ -81,15 +89,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </Link>
 
         <Link 
-          href="/dashboard/chat" 
-          className={`${styles.navItem} ${pathname === '/dashboard/chat' ? styles.activeNavItem : ''}`}
+          href="/dashboard/billing" 
+          className={`${styles.navItem} ${pathname === '/dashboard/billing' ? styles.activeNavItem : ''}`}
         >
-          <MessageSquare size={20} />
-          <span>Chat with Admin</span>
+          <ShoppingBag size={20} />
+          <span>Billing & Invoices</span>
         </Link>
 
         <Link 
-          href="/dashboard/feedback" 
+          href="/dashboard/news" 
+          className={`${styles.navItem} ${pathname?.startsWith('/dashboard/news') ? styles.activeNavItem : ''}`}
+        >
+          <Newspaper size={20} />
+          <span>News</span>
+        </Link>
+
+        {(!user?.chatDisabled) && (
+          <Link 
+            href="/dashboard/chat" 
+            className={`${styles.navItem} ${pathname === '/dashboard/chat' ? styles.activeNavItem : ''}`}
+          >
+            <MessageSquare size={20} />
+            <span>Chat with Admin</span>
+          </Link>
+        )}
+
+        <Link 
+          href="/dashboard/feedback"  
           className={`${styles.navItem} ${pathname === '/dashboard/feedback' ? styles.activeNavItem : ''}`}
         >
           <Flag size={20} />
@@ -102,14 +128,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         >
           <UserCog size={20} />
           <span>Settings</span>
-        </Link>
-
-        <Link 
-          href="/dashboard/news" 
-          className={`${styles.navItem} ${pathname?.startsWith('/dashboard/news') ? styles.activeNavItem : ''}`}
-        >
-          <Newspaper size={20} />
-          <span>News</span>
         </Link>
 
       </aside>

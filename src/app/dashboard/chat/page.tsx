@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { db, auth } from "../../../lib/firebase";
-import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
+import { db } from "../../../lib/firebase";
+import { auth } from "../../../lib/firebase-auth";
+import { collection, query, where, orderBy, getDocs, addDoc, setDoc, doc, serverTimestamp, onSnapshot, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { Send } from "lucide-react";
 import styles from "../page.module.css";
@@ -20,36 +21,64 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [user, setUser] = useState<any>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+    let unsubscribeSnapshot: (() => void) | undefined;
+    
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        setUser(currentUser);
+        // Fetch user data to check if chat is disabled
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        if (userDoc.exists()) {
+          setUser({ uid: currentUser.uid, ...userDoc.data() });
+        } else {
+          setUser(currentUser);
+        }
+
+        // Clean up any existing listener before creating a new one
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+
         // Set up real-time listener for this user's chat
         const q = query(
           collection(db, "chats"), 
-          where("userId", "==", currentUser.uid),
-          orderBy("createdAt", "asc")
+          where("userId", "==", currentUser.uid)
         );
         
-        const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+        unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
           const msgs: ChatMessage[] = [];
           snapshot.forEach((doc) => {
             msgs.push({ id: doc.id, ...doc.data() } as ChatMessage);
           });
+
+          // Sort messages by createdAt locally to avoid requiring a composite index
+          msgs.sort((a, b) => {
+            const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+            const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+            return timeA - timeB;
+          });
+
           setMessages(msgs);
           setTimeout(() => scrollToBottom(), 100);
         });
-
-        return () => unsubscribeSnapshot();
+      } else {
+        // Unsubscribe if user logs out
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
       }
     });
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) unsubscribeSnapshot();
+    };
   }, []);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -65,6 +94,16 @@ export default function ChatPage() {
         isAdmin: false,
         createdAt: serverTimestamp()
       });
+
+      await setDoc(doc(db, "chat_sessions", user.uid), {
+        userId: user.uid,
+        userName: user.email?.split('@')[0] || "User",
+        userEmail: user.email,
+        lastMessage: newMessage.trim(),
+        updatedAt: serverTimestamp(),
+        unreadByAdmin: true
+      }, { merge: true });
+
       setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
@@ -75,9 +114,17 @@ export default function ChatPage() {
     <div style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
       <h1 className={styles.title} style={{ marginBottom: '1rem' }}>Chat with Admin</h1>
       
-      <div className="cleartax-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {messages.length === 0 ? (
+      {user?.chatDisabled ? (
+        <div className="cleartax-card" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+            <h3>Chat Disabled</h3>
+            <p style={{ marginTop: '0.5rem' }}>Your chat access has been disabled by an administrator.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="cleartax-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div ref={messagesContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {messages.length === 0 ? (
             <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '2rem' }}>
               <p>No messages yet. Send a message to start a conversation with our support team!</p>
             </div>
@@ -103,7 +150,6 @@ export default function ChatPage() {
               )
             })
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', background: 'var(--bg-color)' }}>
@@ -119,8 +165,9 @@ export default function ChatPage() {
               <Send size={18} />
             </button>
           </form>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

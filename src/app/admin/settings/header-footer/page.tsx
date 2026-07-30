@@ -24,6 +24,13 @@ interface FooterBlock {
 export default function HeaderFooterConfig() {
   const [headerLinks, setHeaderLinks] = useState<HeaderLink[]>([]);
   const [footerBlocks, setFooterBlocks] = useState<FooterBlock[]>([]);
+  const [showAboutColumn, setShowAboutColumn] = useState(true);
+  const [aboutDescription, setAboutDescription] = useState("");
+  const [aboutPhone, setAboutPhone] = useState("");
+  const [aboutPhoneIcon, setAboutPhoneIcon] = useState("📞");
+  const [aboutEmail, setAboutEmail] = useState("");
+  const [aboutEmailIcon, setAboutEmailIcon] = useState("✉️");
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -36,6 +43,12 @@ export default function HeaderFooterConfig() {
           const data = docSnap.data();
           if (data.headerLinks) setHeaderLinks(data.headerLinks);
           if (data.footerBlocks) setFooterBlocks(data.footerBlocks);
+          if (data.showAboutColumn !== undefined) setShowAboutColumn(data.showAboutColumn);
+          if (data.aboutDescription) setAboutDescription(data.aboutDescription);
+          if (data.aboutPhone !== undefined) setAboutPhone(data.aboutPhone);
+          if (data.aboutPhoneIcon) setAboutPhoneIcon(data.aboutPhoneIcon);
+          if (data.aboutEmail !== undefined) setAboutEmail(data.aboutEmail);
+          if (data.aboutEmailIcon) setAboutEmailIcon(data.aboutEmailIcon);
         } else {
           // Initialize with some defaults
           setHeaderLinks([{ label: "Home", url: "/" }, { label: "Services", url: "/services" }]);
@@ -58,6 +71,12 @@ export default function HeaderFooterConfig() {
       await setDoc(docRef, {
         headerLinks,
         footerBlocks,
+        showAboutColumn,
+        aboutDescription,
+        aboutPhone,
+        aboutPhoneIcon,
+        aboutEmail,
+        aboutEmailIcon,
         updatedAt: new Date().toISOString()
       }, { merge: true });
 
@@ -121,9 +140,9 @@ export default function HeaderFooterConfig() {
     <div>
       <h1 className={styles.pageTitle}>Header & Footer Customize</h1>
       <p className={styles.pageSubtitle}>Manage navigation menus, footer blocks, and links dynamically.</p>
-      
+
       <form onSubmit={handleSave}>
-        
+
         {/* Header Section */}
         <div className={`cleartax-card ${styles.managementCard}`} style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -132,7 +151,7 @@ export default function HeaderFooterConfig() {
               <Plus size={16} /> Add Link
             </button>
           </div>
-          
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {headerLinks.map((link, idx) => (
               <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px' }}>
@@ -153,6 +172,72 @@ export default function HeaderFooterConfig() {
           </div>
         </div>
 
+        {/* Footer About Column Section */}
+        <div className={`cleartax-card ${styles.managementCard}`} style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.2rem', color: '#60a5fa' }}>Footer About Column</h2>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-color)' }}>
+              <input
+                type="checkbox"
+                checked={showAboutColumn}
+                onChange={(e) => setShowAboutColumn(e.target.checked)}
+                style={{ width: '18px', height: '18px' }}
+              />
+              Show About Column
+            </label>
+          </div>
+
+          {showAboutColumn && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Description</label>
+                <textarea
+                  value={aboutDescription}
+                  onChange={(e) => setAboutDescription(e.target.value)}
+                  className={styles.inputField}
+                  rows={2}
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0.5rem' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Phone</label>
+                </div>
+                <input
+                  type="text"
+                  value={aboutPhoneIcon}
+                  onChange={(e) => setAboutPhoneIcon(e.target.value)}
+                  className={styles.inputField}
+                  placeholder="Icon (e.g. 📞)"
+                />
+                <input
+                  type="text"
+                  value={aboutPhone}
+                  onChange={(e) => setAboutPhone(e.target.value)}
+                  className={styles.inputField}
+                />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0.5rem' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Email</label>
+                </div>
+                <input
+                  type="text"
+                  value={aboutEmailIcon}
+                  onChange={(e) => setAboutEmailIcon(e.target.value)}
+                  className={styles.inputField}
+                  placeholder="Icon (e.g. ✉️)"
+                />
+                <input
+                  type="email"
+                  value={aboutEmail}
+                  onChange={(e) => setAboutEmail(e.target.value)}
+                  className={styles.inputField}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Footer Section */}
         <div className={`cleartax-card ${styles.managementCard}`} style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -169,10 +254,10 @@ export default function HeaderFooterConfig() {
             {footerBlocks.map((block, bIdx) => (
               <div key={bIdx} style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <input 
-                    type="text" 
-                    value={block.title} 
-                    onChange={(e) => updateFooterBlockTitle(bIdx, e.target.value)} 
+                  <input
+                    type="text"
+                    value={block.title}
+                    onChange={(e) => updateFooterBlockTitle(bIdx, e.target.value)}
                     style={{ background: 'transparent', border: 'none', borderBottom: '2px solid var(--border-color)', fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-color)', width: '80%', outline: 'none' }}
                     placeholder="Block Title"
                     required

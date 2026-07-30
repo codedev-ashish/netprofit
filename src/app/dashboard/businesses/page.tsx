@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import styles from "../page.module.css";
-import { db, auth } from "../../../lib/firebase";
+import { db } from "../../../lib/firebase";
+import { auth } from "../../../lib/firebase-auth";
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, deleteDoc } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { Building2, Plus, Trash2, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -28,6 +29,11 @@ export default function ManageBusinessesPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newBusiness, setNewBusiness] = useState({ name: '', type: '', gstNumber: '', panNumber: '', tanNumber: '', pfNumber: '', esicNumber: '' });
   const [submitting, setSubmitting] = useState(false);
+
+  const [deletingBusinessId, setDeletingBusinessId] = useState<string | null>(null);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -74,13 +80,54 @@ export default function ManageBusinessesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this business profile?")) return;
+  const handleDeleteClick = async (id: string) => {
     try {
-      await deleteDoc(doc(db, "businesses", id));
+      const q = query(collection(db, "user_subscriptions"), where("userId", "==", user.uid), where("businessId", "==", id));
+      const querySnapshot = await getDocs(q);
+      let hasActive = false;
+      querySnapshot.forEach((doc) => {
+        if (doc.data().status === 'active') {
+          hasActive = true;
+        }
+      });
+      if (hasActive) {
+        alert("You cannot delete a business that has active service plans.");
+        return;
+      }
+      setDeletingBusinessId(id);
+      setDeletePassword("");
+      setDeleteError("");
+    } catch (err) {
+      console.error("Error checking business services:", err);
+      alert("An error occurred. Please try again.");
+    }
+  };
+
+  const confirmDelete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !user.email || !deletingBusinessId) return;
+    
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      const credential = EmailAuthProvider.credential(user.email, deletePassword);
+      await reauthenticateWithCredential(user, credential);
+      
+      await deleteDoc(doc(db, "businesses", deletingBusinessId));
+      
+      setDeletingBusinessId(null);
+      setDeletePassword("");
       await fetchBusinesses(user.uid);
-    } catch (error) {
-      console.error("Error deleting business:", error);
+    } catch (err: any) {
+      console.error("Delete business error:", err);
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        setDeleteError("Incorrect password.");
+      } else {
+        setDeleteError("An error occurred while deleting the business. " + err.message);
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -164,7 +211,7 @@ export default function ManageBusinessesPage() {
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'none'; }}
               >
                 <button 
-                  onClick={(e) => { e.stopPropagation(); handleDelete(b.id); }} 
+                  onClick={(e) => { e.stopPropagation(); handleDeleteClick(b.id); }} 
                   style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'transparent', border: 'none', color: '#e53e3e', cursor: 'pointer', zIndex: 10 }}
                 >
                   <Trash2 size={18} />
@@ -172,7 +219,7 @@ export default function ManageBusinessesPage() {
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                   <div style={{ padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
-                    <Building2 size={24} color="var(--primary-color)" />
+                    <Building2 size={24} color="#60a5fa" />
                   </div>
                   <div>
                     <h3 style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>{b.name}</h3>
@@ -190,13 +237,41 @@ export default function ManageBusinessesPage() {
 
                 <hr style={{ margin: '1rem 0', borderColor: 'var(--border-color)', borderStyle: 'solid', borderWidth: '1px 0 0 0' }} />
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--primary-color)', fontSize: '0.85rem', fontWeight: 600 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#60a5fa', fontSize: '0.85rem', fontWeight: 600 }}>
                   <span>Open Business Details</span>
                   <ArrowRight size={16} />
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {deletingBusinessId && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="cleartax-card" style={{ padding: '2rem', width: '100%', maxWidth: '400px' }}>
+            <h3 style={{ marginBottom: '1rem', color: '#e53e3e' }}>Confirm Deletion</h3>
+            <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>Please enter your password to confirm deletion of this business.</p>
+            <form onSubmit={confirmDelete} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <input 
+                type="password" 
+                required 
+                placeholder="Your Password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)' }}
+              />
+              {deleteError && <p style={{ color: '#e53e3e', fontSize: '0.85rem' }}>{deleteError}</p>}
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button type="submit" disabled={isDeleting} className="btn btn-primary" style={{ backgroundColor: '#e53e3e', borderColor: '#e53e3e', flex: 1 }}>
+                  {isDeleting ? 'Deleting...' : 'Delete Business'}
+                </button>
+                <button type="button" onClick={() => { setDeletingBusinessId(null); setDeletePassword(""); setDeleteError(""); }} className="btn btn-secondary" style={{ flex: 1 }}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -6,7 +6,7 @@
 
 .hero {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
-  color: white;
+  color: var(--primary-text-color) ;
   padding: 4rem 2rem 6rem;
   text-align: left;
 }
@@ -37,7 +37,7 @@
 
 .categoryBadge {
   background: var(--accent-color);
-  color: white;
+  color: #0f172a;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.85rem;

@@ -29,6 +29,17 @@ export default function BusinessDetailsPage() {
           setBusiness({ id: bSnap.id, ...bSnap.data() });
         }
 
+        // Fetch global services to verify they still exist
+        const allServicesSnap = await getDocs(collection(db, "services"));
+        const validServiceIds = new Set();
+        const validServiceNames = new Set();
+        allServicesSnap.forEach(doc => {
+          validServiceIds.add(doc.id);
+          const data = doc.data();
+          if (data.name) validServiceNames.add(data.name);
+          if (data.title) validServiceNames.add(data.title);
+        });
+
         // Fetch Services associated with this business (via service_requests)
         const srQuery = query(collection(db, "service_requests"), where("userId", "==", userId), where("businessId", "==", businessId));
         const srSnap = await getDocs(srQuery);
@@ -38,6 +49,15 @@ export default function BusinessDetailsPage() {
         
         srSnap.forEach(s => {
           const data = s.data();
+          
+          // Skip if the service was deleted from the master catalog
+          if (data.serviceId && !validServiceIds.has(data.serviceId)) {
+            return;
+          }
+          if (data.serviceName && !validServiceNames.has(data.serviceName) && !data.serviceId) {
+            return;
+          }
+
           const serviceIdentifier = data.serviceId || data.serviceName;
           
           if (serviceIdentifier && !seenServiceIds.has(serviceIdentifier)) {
@@ -93,7 +113,7 @@ export default function BusinessDetailsPage() {
                 onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border-color)"}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                  <FileText size={20} style={{ color: "var(--primary-color)" }} />
+                  <FileText size={20} style={{ color: "var(--icon-color)" }} />
                   <div>
                     <h4 style={{ fontSize: "1.05rem", marginBottom: "0.25rem" }}>{s.serviceName}</h4>
                     {s.category && <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>{s.category}</p>}

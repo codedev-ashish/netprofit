@@ -2,69 +2,74 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { db, auth } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase-auth";
+import { doc, getDoc, addDoc, collection, serverTimestamp, updateDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { UploadCloud, CheckCircle } from "lucide-react";
+import { ArrowLeft, UploadCloud, FileText, CheckCircle, Briefcase, Calendar, Info, ShieldCheck, Download } from "lucide-react";
 
-export default function DocumentUploadPage() {
+export default function RequestUploadPage() {
   const params = useParams();
   const router = useRouter();
-  const [requestData, setRequestData] = useState<any>(null);
-  const [businessData, setBusinessData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const requestId = params?.id as string;
 
-  // Form state
-  const [taxYear, setTaxYear] = useState("2025-26");
-  const [quarter, setQuarter] = useState("");
-  const [month, setMonth] = useState("");
-  const [returnType, setReturnType] = useState("Original");
-  const [files, setFiles] = useState<FileList | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [request, setRequest] = useState<any>(null);
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [storageSettings, setStorageSettings] = useState<any>(null);
+  const [user, setUser] = useState<any>(null);
+  const [uploadedMonths, setUploadedMonths] = useState<string[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser && params?.id) {
-        await fetchRequestDetails(params.id as string);
+      if (currentUser && requestId) {
+        setUser(currentUser);
+        await fetchData(requestId);
       } else if (!currentUser) {
         router.push("/auth/login");
       }
     });
     return () => unsubscribe();
-  }, [params, router]);
+  }, [requestId]);
 
-  const fetchRequestDetails = async (id: string) => {
+  const fetchData = async (id: string) => {
     try {
-      const docRef = doc(db, "service_requests", id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setRequestData(data);
-        if (data.taxYear) setTaxYear(data.taxYear);
-        if (data.quarter) setQuarter(data.quarter);
-        if (data.month) setMonth(data.month);
-        if (data.returnType) setReturnType(data.returnType);
+      // Fetch Storage Settings
+      const sRef = doc(db, 'settings', 'storage');
+      const sSnap = await getDoc(sRef);
+      if (sSnap.exists()) setStorageSettings(sSnap.data());
 
-        if (data.businessId) {
-          const bRef = doc(db, "businesses", data.businessId);
-          const bSnap = await getDoc(bRef);
-          if (bSnap.exists()) {
-            setBusinessData(bSnap.data());
-          }
+      // Fetch Request Details
+      const reqRef = doc(db, "service_requests", id);
+      const reqSnap = await getDoc(reqRef);
+      if (reqSnap.exists()) {
+        const reqData: any = { id: reqSnap.id, ...reqSnap.data() };
+        setRequest(reqData);
+
+        // If TDS, fetch existing documents to know which months are already uploaded
+        if (reqData.serviceName?.toLowerCase().includes("tds")) {
+          const { query, collection, where, getDocs } = await import("firebase/firestore");
+          const q = query(
+            collection(db, "documents"),
+            where("serviceRequestId", "==", id),
+            where("returnType", "==", reqData.returnType || "Original")
+          );
+          const docsSnap = await getDocs(q);
+          const uMonths: string[] = [];
+          docsSnap.forEach(d => {
+            const m = d.data().uploadedMonth;
+            if (m && !uMonths.includes(m)) uMonths.push(m);
+          });
+          setUploadedMonths(uMonths);
         }
       } else {
-        console.error("Request not found");
-      }
-
-      // Fetch storage configuration
-      const sRef = doc(db, "settings", "storage");
-      const sSnap = await getDoc(sRef);
-      if (sSnap.exists()) {
-        setStorageSettings(sSnap.data());
+        alert("Request not found");
+        router.push("/dashboard");
       }
     } catch (error) {
-      console.error("Error fetching request details:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
@@ -72,183 +77,375 @@ export default function DocumentUploadPage() {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!files || files.length === 0) return alert("Please select a file to upload.");
-    setUploading(true);
+    const isTDS = request?.serviceName?.toLowerCase().includes("tds");
+    if (!docFile || !user || !request) return alert("Please select a file to upload.");
+    if (isTDS && !selectedMonth) return alert("Please select a month to upload the document for.");
+    setUploadingDoc(true);
 
     try {
-      // Determine active storage provider
-      const provider = storageSettings?.storageProvider ||
-        (storageSettings?.gdriveEnabled ? 'gdrive' : 'firebase');
+      const provider = storageSettings?.storageProvider || (storageSettings?.gdriveEnabled ? 'gdrive' : 'firebase');
+      let downloadUrl = "";
+      let fileId: string | null = null;
 
-      // 1. Loop through all selected files and add doc records to collection
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        let fileUrl = "";
-        let fileId: string | null = null;
+      const period = request.month || request.quarter || request.period || request.frequency || "Annual";
 
-        if (provider === 'gdrive' || provider === 'idrive') {
-          const uData = new window.FormData();
-          uData.append("file", file);
-          uData.append("uploadType", "user");
-          uData.append("business", requestData?.businessName || "unknown-business");
-          uData.append("service", requestData?.serviceName || "unknown-service");
-          uData.append("taxYear", taxYear || requestData?.taxYear || "unknown-tax-year");
+      if (provider === 'gdrive' || provider === 'idrive') {
+        const uData = new window.FormData();
+        uData.append("file", docFile);
+        uData.append("uploadType", "user");
+        uData.append("user", user.uid);
+        uData.append("business", request.businessName || "unknown-business");
+        uData.append("service", request.serviceName || "unknown-service");
+        uData.append("taxYear", request.taxYear || "unknown-tax-year");
+        uData.append("period", period);
 
-          let pVal = "Annual";
-          if (requestData?.planType === 'Monthly' || month) pVal = month;
-          else if (requestData?.planType === 'Quarterly' || quarter) pVal = quarter;
-          uData.append("period", pVal);
-          uData.append("returnType", returnType || requestData?.returnType || "Original");
-
-          const res = await fetch("/api/upload-drive", {
-            method: "POST",
-            body: uData,
-          });
-
-          if (!res.ok) {
-            const errData = await res.json();
-            throw new Error(errData.error || "Upload failed");
-          }
-
-          const uploadRes = await res.json();
-          fileUrl = uploadRes.webViewLink || "";
-          fileId = uploadRes.fileId || null;
-        } else {
-          // Firebase Storage (client-side)
-          const { storage } = await import("@/lib/firebase");
-          const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
-          const fileRef = ref(storage, `service_requests/${params?.id}/${Date.now()}_${file.name}`);
-          await uploadBytes(fileRef, file);
-          fileUrl = await getDownloadURL(fileRef);
+        const res = await fetch("/api/upload-drive", { method: "POST", body: uData });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || "Upload failed");
         }
+        const uploadRes = await res.json();
+        downloadUrl = uploadRes.webViewLink || "";
+        fileId = uploadRes.fileId || null;
+      } else {
+        const { storage } = await import("@/lib/firebase");
+        const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
+        const fileRef = ref(storage, `users/${user.uid}/documents/${Date.now()}_${docFile.name}`);
+        await uploadBytes(fileRef, docFile);
+        downloadUrl = await getDownloadURL(fileRef);
+      }
 
-        await addDoc(collection(db, "documents"), {
-          serviceRequestId: params?.id,
-          uploaderType: "User",
-          fileName: file.name,
-          fileUrl: fileUrl,
-          fileId: fileId,
-          fileType: file.type || "application/pdf",
-          uploadedAt: serverTimestamp(),
-          businessId: requestData?.businessId || "",
-          businessName: requestData?.businessName || "",
-          businessDetails: businessData || null,
-          taxYear: taxYear || requestData?.taxYear || "",
-          quarter: quarter || requestData?.quarter || "",
-          month: month || requestData?.month || "",
-          returnType: returnType || requestData?.returnType || "Original"
+      // Add document entry
+      await addDoc(collection(db, "documents"), {
+        fileName: docFile.name,
+        fileUrl: downloadUrl,
+        fileId: fileId,
+        serviceName: request.serviceName,
+        taxYear: request.taxYear,
+        periodValue: period,
+        businessId: request.businessId,
+        businessName: request.businessName,
+        uploadedBy: user.email || "User",
+        uploaderType: "User",
+        userId: user.uid,
+        serviceRequestId: request.id,
+        returnType: request.returnType || "Original",
+        uploadedMonth: isTDS ? selectedMonth : null,
+        createdAt: serverTimestamp()
+      });
+
+      let shouldLock = true;
+      if (isTDS) {
+        shouldLock = (uploadedMonths.length + 1) >= 3;
+      }
+
+      if (shouldLock) {
+        // Update request status to Documents Received & Checked if it's pending or something else
+        await updateDoc(doc(db, "service_requests", request.id), {
+          documentsUploaded: true,
+          status: request.status === "Pending" ? "Documents Received & Checked" : request.status
         });
       }
 
-      // 2. Update the request with period tags if they provided them
-      await updateDoc(doc(db, "service_requests", params?.id as string), {
-        taxYear: taxYear || requestData.taxYear || "",
-        quarter: quarter || requestData.quarter || "",
-        month: month || requestData.month || "",
-        documentsUploaded: true
-      });
+      // Notify Admin
+      try {
+        await fetch("/api/notify-admin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            businessName: request.businessName,
+            serviceName: request.serviceName,
+            taxYear: request.taxYear,
+            period: period,
+            returnType: request.returnType || "Original",
+            userName: user.displayName || user.email || "User",
+            fileCount: 1,
+            userId: user.uid,
+            businessId: request.businessId,
+            serviceSlug: encodeURIComponent(request.serviceName),
+            plan: request.planType || null
+          })
+        });
+      } catch (notifyErr) {
+        console.error("Failed to notify admin:", notifyErr);
+      }
 
-      alert("Documents uploaded successfully! The admin will begin processing your service.");
-      router.push("/dashboard/requests");
+      alert("Document uploaded successfully.");
+      setDocFile(null);
+      // Go back to the dashboard businesses view
+      router.back();
     } catch (error) {
-      console.error("Error uploading documents:", error);
-      alert("Upload failed.");
+      console.error("Error uploading document:", error);
+      alert("Failed to upload document. Please try again.");
     } finally {
-      setUploading(false);
+      setUploadingDoc(false);
     }
   };
 
-  if (loading) return <div style={{ padding: '4rem', textAlign: 'center' }}>Loading Document Requirements...</div>;
-  if (!requestData) return <div style={{ padding: '4rem', textAlign: 'center' }}>Service request not found.</div>;
+  if (loading) return <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading secure upload environment...</div>;
+  if (!request) return null;
 
-  const isQuarterlyRequest = requestData.planType === 'Quarterly' || !!requestData.quarter || (requestData.serviceName || "").toLowerCase().includes("tds");
-  const isMonthlyRequest = requestData.planType === 'Monthly' || !!requestData.month;
+  const period = request.month || request.quarter || request.period || request.frequency || "Annual";
 
   return (
-    <div style={{ maxWidth: '600px', margin: '2rem auto', padding: '2rem', background: 'white', color: '#1f2937', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#111827' }}>Upload Required Documents</h1>
-      <p style={{ color: '#4b5563', marginBottom: '1.5rem' }}>For {requestData.serviceName} ({requestData.businessName})</p>
+    <div style={{ width: '100%', maxWidth: '700px', margin: '0 auto', padding: 'clamp(1rem, 4vw, 2rem)', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 'calc(100vh - 100px)' }}>
+      <button
+        onClick={() => router.back()}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'color 0.2s' }}
+        onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-color)'}
+        onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+      >
+        <ArrowLeft size={16} /> Back to Dashboard
+      </button>
 
-      <div style={{ background: '#FAEEDA', color: '#854F0B', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', fontSize: '0.9rem' }}>
-        <strong>Important:</strong> Please ensure all documents are clear and readable. PDF or Excel formats are preferred.
-      </div>
-
-      <form onSubmit={handleUpload} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-        {/* Dynamic Period Inputs based on Plan Type */}
-        {requestData.planType !== 'One-time' && (
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Tax Year (FY)</label>
-              <select disabled value={taxYear} onChange={(e) => setTaxYear(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' }}>
-                <option value="2025-26">2025-26</option>
-                <option value="2026-27">2026-27</option>
-              </select>
-            </div>
-
-            {isQuarterlyRequest && (
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Quarter</label>
-                <select disabled required value={quarter} onChange={(e) => setQuarter(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' }}>
-                  <option value="">Select Quarter</option>
-                  <option value="Q1">Q1 (Apr-Jun)</option>
-                  <option value="Q2">Q2 (Jul-Sep)</option>
-                  <option value="Q3">Q3 (Oct-Dec)</option>
-                  <option value="Q4">Q4 (Jan-Mar)</option>
-                </select>
-              </div>
-            )}
-
-            {isMonthlyRequest && (
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Month</label>
-                <input disabled type="month" required value={month} onChange={(e) => setMonth(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' }} />
-              </div>
-            )}
-
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Return Type</label>
-              <select disabled value={returnType} onChange={(e) => setReturnType(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', background: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' }}>
-                <option value="Original">Original</option>
-                <option value="Revision">Revision</option>
-              </select>
-            </div>
+      <div className="cleartax-card" style={{ padding: '0', overflow: 'hidden' }}>
+        <div style={{ background: 'linear-gradient(to right, var(--primary-color), var(--primary-hover))', color: 'white', padding: 'clamp(1.5rem, 5vw, 2rem)', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '1rem', borderRadius: '50%' }}>
+            <UploadCloud size={32} />
           </div>
-        )}
-
-        <div>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Select Files</label>
-          <div style={{ border: '2px dashed #d1d5db', padding: '2rem', textAlign: 'center', borderRadius: '8px', cursor: 'pointer' }} onClick={() => document.getElementById('fileInput')?.click()}>
-            <UploadCloud size={48} color="#9ca3af" style={{ margin: '0 auto 1rem' }} />
-            <p style={{ color: '#374151', fontWeight: '500' }}>Click or drag files here to upload</p>
-            <p style={{ fontSize: '0.8rem', color: '#6b7280' }}>Supported: PDF, Excel, JPEG, PNG</p>
+          <div style={{ flex: '1 1 auto', minWidth: '200px' }}>
+            <h1 style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', fontWeight: 'bold', margin: 0, color: 'white', lineHeight: 1.2 }}>Secure Upload portal</h1>
+            <p style={{ margin: '0.4rem 0 0 0', opacity: 0.9, fontSize: 'clamp(0.8rem, 3vw, 0.9rem)', lineHeight: 1.4 }}>Upload documents for processing by our experts</p>
           </div>
-          <input
-            id="fileInput"
-            type="file"
-            multiple
-            onChange={(e) => setFiles(e.target.files)}
-            style={{ display: 'none' }}
-          />
-          {files && files.length > 0 && (
-            <div style={{ marginTop: '1rem', background: '#f3f4f6', padding: '1rem', borderRadius: '6px' }}>
-              <strong style={{ fontSize: '0.9rem', color: '#1f2937' }}>Selected Files:</strong>
-              <ul style={{ margin: 0, paddingLeft: '1.5rem', fontSize: '0.85rem', color: '#4b5563' }}>
-                {Array.from(files).map((f, i) => <li key={i}>{f.name}</li>)}
-              </ul>
-            </div>
-          )}
         </div>
 
-        <button
-          type="submit"
-          disabled={uploading || !files}
-          className="btn btn-primary"
-          style={{ padding: '1rem', fontSize: '1.1rem', marginTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-        >
-          <CheckCircle size={18} /> {uploading ? 'Uploading...' : 'Submit Documents'}
-        </button>
-      </form>
+        <div style={{ padding: 'clamp(1rem, 5vw, 2rem)' }}>
+          <div style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShieldCheck size={18} style={{ color: 'var(--accent-color)' }} />
+              Filing Context
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <Briefcase size={16} style={{ color: 'var(--text-muted)' }} />
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Service & Business</div>
+                  <div style={{ fontWeight: 600 }}>{request.serviceName}</div>
+                  <div style={{ fontSize: '0.85rem' }}>{request.businessName}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <Calendar size={16} style={{ color: 'var(--text-muted)' }} />
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Period</div>
+                  <div style={{ fontWeight: 600 }}>{period} ({request.taxYear})</div>
+                  <div style={{ fontSize: '0.85rem' }}>{request.returnType || "Original"} Filing</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {(() => {
+            const isTDS = request?.serviceName?.toLowerCase().includes("tds");
+            const getMonthsForQuarter = (q: string) => {
+              switch (q) {
+                case "Q1": return ["April", "May", "June"];
+                case "Q2": return ["July", "August", "September"];
+                case "Q3": return ["October", "November", "December"];
+                case "Q4": return ["January", "February", "March"];
+                default: return [];
+              }
+            };
+            const getMonthDates = (m: string, taxYearStr: string) => {
+              if (!taxYearStr) return { enableDate: new Date(0), unlockText: "", dueText: "" };
+              const parts = taxYearStr.split('-');
+              const startYear = parseInt(parts[0]);
+              const endYear = startYear + 1;
+
+              let enableDate = new Date();
+              let unlockText = "";
+              let dueText = "";
+              switch (m) {
+                case "April": enableDate = new Date(startYear, 4, 1); unlockText = "1st May"; dueText = "4th May"; break;
+                case "May": enableDate = new Date(startYear, 5, 1); unlockText = "1st June"; dueText = "4th June"; break;
+                case "June": enableDate = new Date(startYear, 6, 1); unlockText = "1st July"; dueText = "4th July"; break;
+                case "July": enableDate = new Date(startYear, 7, 1); unlockText = "1st August"; dueText = "4th August"; break;
+                case "August": enableDate = new Date(startYear, 8, 1); unlockText = "1st September"; dueText = "4th September"; break;
+                case "September": enableDate = new Date(startYear, 9, 1); unlockText = "1st October"; dueText = "4th October"; break;
+                case "October": enableDate = new Date(startYear, 10, 1); unlockText = "1st November"; dueText = "4th November"; break;
+                case "November": enableDate = new Date(startYear, 11, 1); unlockText = "1st December"; dueText = "4th December"; break;
+                case "December": enableDate = new Date(endYear, 0, 1); unlockText = "1st January"; dueText = "4th January"; break;
+                case "January": enableDate = new Date(endYear, 1, 1); unlockText = "1st February"; dueText = "4th February"; break;
+                case "February": enableDate = new Date(endYear, 2, 1); unlockText = "1st March"; dueText = "4th March"; break;
+                case "March": enableDate = new Date(endYear, 3, 15); unlockText = "15th April"; dueText = "20th April"; break;
+              }
+              return { enableDate, unlockText, dueText };
+            };
+
+            return (
+              <form onSubmit={handleUpload}>
+                {isTDS && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.95rem' }}>Select Month</label>
+                    <select
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(e.target.value)}
+                      style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-color)', outline: 'none' }}
+                      required
+                    >
+                      <option value="">-- Choose Month --</option>
+                      {getMonthsForQuarter(period).map(m => {
+                        const { enableDate, unlockText, dueText } = getMonthDates(m, request.taxYear);
+                        const isLocked = new Date() < enableDate;
+                        const isUploaded = uploadedMonths.includes(m);
+
+                        let label = m;
+                        if (isUploaded) label += " (Already Uploaded)";
+                        else if (isLocked) label += ` (Unlocks ${unlockText})`;
+                        else label += ` (Due ${dueText})`;
+
+                        return (
+                          <option key={m} value={m} disabled={isUploaded || isLocked}>
+                            {label}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                )}
+                {isTDS && (
+                  <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <a 
+                      href={`/api/tds-template?period=${encodeURIComponent(period)}`}
+                      download={`TDS_Upload_Sample_${period}.xlsx`}
+                      style={{ 
+                        fontSize: '0.85rem', 
+                        color: 'var(--accent-color)', 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '0.4rem', 
+                        fontWeight: 600,
+                        backgroundColor: 'rgba(255, 107, 0, 0.05)',
+                        padding: '0.5rem 0.8rem',
+                        borderRadius: '6px',
+                        textDecoration: 'none',
+                        border: '1px solid rgba(255, 107, 0, 0.3)',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 107, 0, 0.1)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 107, 0, 0.05)';
+                      }}
+                    >
+                      <Download size={14} /> Download Sample Template (.xlsx)
+                    </a>
+                  </div>
+                )}
+                <div style={{ marginBottom: '2rem' }}>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.95rem' }}>Upload File</label>
+                  <div
+                    style={{
+                      border: docFile ? '2px solid var(--accent-color)' : '2px dashed var(--border-color)',
+                      borderRadius: '12px',
+                      padding: 'clamp(2rem, 6vw, 4rem) clamp(1rem, 4vw, 2rem)',
+                      textAlign: 'center',
+                      backgroundColor: docFile ? 'rgba(255, 107, 0, 0.05)' : 'var(--bg-secondary)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    onClick={() => document.getElementById('file-upload')?.click()}
+                    onMouseOver={(e) => {
+                      if (!docFile) {
+                        e.currentTarget.style.borderColor = 'var(--primary-color)';
+                        e.currentTarget.style.backgroundColor = 'rgba(12, 56, 102, 0.03)';
+                      }
+                    }}
+                    onMouseOut={(e) => {
+                      if (!docFile) {
+                        e.currentTarget.style.borderColor = 'var(--border-color)';
+                        e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                      }
+                    }}
+                  >
+                    {docFile ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', color: 'var(--accent-color)' }}>
+                        <div style={{ background: 'white', padding: '1rem', borderRadius: '50%', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                          <CheckCircle size={32} />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-color)' }}>{docFile.name}</div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Ready to upload. Click to change file.</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', color: 'var(--text-muted)' }}>
+                        <div style={{ background: 'white', padding: '1rem', borderRadius: '50%', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                          <UploadCloud size={32} style={{ color: 'var(--primary-color)' }} />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-color)', fontSize: '1.05rem', marginBottom: '0.25rem' }}>Click to browse your files</div>
+                          <div style={{ fontSize: '0.85rem' }}>{isTDS ? "Upload Excel or CSV only (Max 3MB)" : "Upload ZIP, PDF, or Excel (Max 3MB)"}</div>
+                        </div>
+                      </div>
+                    )}
+                    <input
+                      id="file-upload"
+                      type="file"
+                      accept={isTDS ? ".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" : ".pdf,.zip,.xls,.xlsx,.csv,application/pdf,application/zip,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"}
+                      onChange={e => {
+                        const file = e.target.files ? e.target.files[0] : null;
+                        if (file) {
+                          if (file.size > 3 * 1024 * 1024) {
+                            alert("File size exceeds 3MB limit.");
+                            setDocFile(null);
+                            e.target.value = '';
+                            return;
+                          }
+                          const allowedTypes = isTDS ? ['.xls', '.xlsx', '.csv'] : ['.pdf', '.zip', '.xls', '.xlsx', '.csv'];
+                          const isAllowed = allowedTypes.some(ext => file.name.toLowerCase().endsWith(ext));
+                          if (!isAllowed) {
+                            alert(`Invalid file format. Please upload ${isTDS ? "Excel/CSV" : "ZIP, PDF, or Excel"} files.`);
+                            setDocFile(null);
+                            e.target.value = '';
+                            return;
+                          }
+                          setDocFile(file);
+                        } else {
+                          setDocFile(null);
+                        }
+                      }}
+                      required
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                    <Info size={14} />
+                    <span>Your documents are encrypted and securely stored.</span>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={uploadingDoc || !docFile}
+                  className="btn btn-primary"
+                  style={{
+                    padding: '1rem',
+                    fontSize: '1.05rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    width: '100%',
+                    borderRadius: '8px',
+                    opacity: uploadingDoc || !docFile ? 0.6 : 1,
+                    cursor: uploadingDoc || !docFile ? 'not-allowed' : 'pointer',
+                    boxShadow: uploadingDoc || !docFile ? 'none' : '0 4px 14px 0 rgba(255, 107, 0, 0.39)'
+                  }}
+                >
+                  {uploadingDoc ? 'Uploading and notifying admin...' : 'Securely Upload Document'}
+                </button>
+              </form>
+            );
+          })()}
+        </div>
+      </div>
     </div>
   );
 }

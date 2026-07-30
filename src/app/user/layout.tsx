@@ -1,11 +1,14 @@
 "use client";
 
+import Loader from "../../components/Loader";
+
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, Settings, LogOut, Building2, MessageSquare, Flag, UserCog } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Settings, LogOut, Building2, MessageSquare, Flag, UserCog, Newspaper } from "lucide-react";
 import styles from "../dashboard/layout.module.css";
-import { auth, db } from "../../lib/firebase";
+import { db } from "../../lib/firebase";
+import { auth } from "../../lib/firebase-auth";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -40,7 +43,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   };
 
   if (loading) {
-    return <div style={{ padding: "4rem", textAlign: "center" }}>Loading your panel...</div>;
+    return <Loader text="Loading your panel..." />;
   }
 
   return (
@@ -78,6 +81,22 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         >
           <Building2 size={20} />
           <span>Businesses</span>
+        </Link>
+
+        <Link 
+          href="/dashboard/billing" 
+          className={`${styles.navItem} ${pathname === '/dashboard/billing' ? styles.activeNavItem : ''}`}
+        >
+          <ShoppingBag size={20} />
+          <span>Billing & Invoices</span>
+        </Link>
+
+        <Link 
+          href="/dashboard/news" 
+          className={`${styles.navItem} ${pathname?.startsWith('/dashboard/news') ? styles.activeNavItem : ''}`}
+        >
+          <Newspaper size={20} />
+          <span>News</span>
         </Link>
 
         <Link 

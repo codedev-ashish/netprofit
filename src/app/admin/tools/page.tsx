@@ -5,6 +5,7 @@ import styles from "../page.module.css";
 import { db } from "../../../../src/lib/firebase";
 import { collection, addDoc, serverTimestamp, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Trash2, Edit2, Check, X } from "lucide-react";
+import RichTextEditor from "../../../../src/components/RichTextEditor";
 
 const INITIAL_TOOLS = [
   { name: "Income Tax Calculator", slug: "income-tax-calculator", description: "Calculate your income tax for the old and new regime.", isPublished: true },
@@ -20,6 +21,9 @@ export default function AdminTools() {
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [disclaimer, setDisclaimer] = useState("");
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [customSchema, setCustomSchema] = useState("");
   const [isPublished, setIsPublished] = useState(true);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,6 +75,9 @@ export default function AdminTools() {
       slug,
       description,
       disclaimer,
+      metaTitle,
+      metaDescription,
+      customSchema,
       isPublished,
       updatedAt: serverTimestamp()
     };
@@ -119,6 +126,9 @@ export default function AdminTools() {
     setSlug(t.slug || "");
     setDescription(t.description || "");
     setDisclaimer(t.disclaimer || "");
+    setMetaTitle(t.metaTitle || "");
+    setMetaDescription(t.metaDescription || "");
+    setCustomSchema(t.customSchema || "");
     setIsPublished(t.isPublished ?? true);
   };
 
@@ -128,6 +138,9 @@ export default function AdminTools() {
     setSlug("");
     setDescription("");
     setDisclaimer("");
+    setMetaTitle("");
+    setMetaDescription("");
+    setCustomSchema("");
     setIsPublished(true);
   };
 
@@ -154,13 +167,44 @@ export default function AdminTools() {
             <label>Slug (URL)</label>
             <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} required className={styles.inputField} />
           </div>
-          <div className={styles.inputGroup}>
+          <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
             <label>Description</label>
-            <textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} required className={styles.inputField} />
+            <RichTextEditor value={description} onChange={setDescription} />
           </div>
           <div className={styles.inputGroup}>
             <label>Disclaimer (Optional)</label>
             <textarea rows={2} value={disclaimer} onChange={(e) => setDisclaimer(e.target.value)} className={styles.inputField} />
+          </div>
+          <div className={styles.inputGroup}>
+            <label>Custom SEO Meta Title (Optional)</label>
+            <input 
+              type="text" 
+              placeholder="Custom SEO Title" 
+              className={styles.inputField} 
+              value={metaTitle}
+              onChange={(e) => setMetaTitle(e.target.value)}
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <label>Custom SEO Meta Description (Optional)</label>
+            <textarea 
+              rows={3} 
+              placeholder="Custom SEO Description..." 
+              className={styles.inputField} 
+              value={metaDescription}
+              onChange={(e) => setMetaDescription(e.target.value)}
+            />
+          </div>
+          <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+            <label>Custom Schema (JSON-LD) (Optional)</label>
+            <textarea 
+              value={customSchema} 
+              onChange={(e) => setCustomSchema(e.target.value)} 
+              placeholder='{"@context": "https://schema.org", "@type": "WebApplication", ...}' 
+              rows={4} 
+              className={styles.inputField} 
+              style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}
+            />
           </div>
           <div className={styles.inputGroup} style={{flexDirection: 'row', alignItems: 'center', gap: '10px'}}>
             <input type="checkbox" id="published" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} style={{width: '18px', height: '18px'}} />
@@ -191,9 +235,7 @@ export default function AdminTools() {
                 <div style={{fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem'}}>
                   /{t.slug}
                 </div>
-                <div style={{fontSize: '0.9rem', marginTop: '0.25rem', color: '#475569'}}>
-                  {t.description}
-                </div>
+                <div style={{fontSize: '0.9rem', marginTop: '0.25rem', color: '#475569'}} dangerouslySetInnerHTML={{ __html: t.description }} />
                 {t.disclaimer && (
                   <div style={{fontSize: '0.85rem', marginTop: '0.25rem', color: '#94a3b8', fontStyle: 'italic'}}>
                     Disclaimer: {t.disclaimer.substring(0, 60)}{t.disclaimer.length > 60 ? '...' : ''}

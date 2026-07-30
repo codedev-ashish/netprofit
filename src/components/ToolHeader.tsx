@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { db } from "../lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import styles from "./ToolHeader.module.css";
+import ShareButtons from "./ShareButtons";
 
 export default function ToolHeader({ toolSlug }: { toolSlug: string }) {
   const [title, setTitle] = useState("Loading...");
@@ -31,8 +32,11 @@ export default function ToolHeader({ toolSlug }: { toolSlug: string }) {
 
   return (
     <div className={styles.hero}>
-      <h1 className={styles.title}>{title}</h1>
+      <div className={styles.title} style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{title}</div>
       {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+        <ShareButtons title={title} text={subtitle} />
+      </div>
     </div>
   );
 }

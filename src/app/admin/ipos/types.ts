@@ -9,6 +9,21 @@ export interface FinancialYear {
   debt: number;
 }
 
+export interface FinancialTableColumn {
+  id: string;
+  label: string;
+}
+
+export interface FinancialTableRow {
+  id: string;
+  values: Record<string, string>;
+}
+
+export interface FinancialTable {
+  columns: FinancialTableColumn[];
+  rows: FinancialTableRow[];
+}
+
 export interface GMPTrend {
   date: string;
   price: number;
@@ -49,6 +64,30 @@ export interface IPOTimeline {
   listingDate: string;
 }
 
+export interface IPOTimelineField {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface IPOIssueDetailField {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface IPOSubscriptionField {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface IPOQuotaField {
+  id: string;
+  label: string;
+  value: string;
+}
+
 export interface IPOValuation {
   eps: number;
   pe: number;
@@ -56,6 +95,12 @@ export interface IPOValuation {
   marketCap: number;
   ronw: number;
   nav: number;
+}
+
+export interface IPOValuationField {
+  id: string;
+  label: string;
+  value: string;
 }
 
 export interface IPORegistrar {
@@ -96,6 +141,11 @@ export interface IPOData {
   isVisible: boolean;
   name: string;
   symbol: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  seoKeywords?: string;
+  customSchema?: string;
+  canonicalUrl?: string;
   logoUrl?: string;
   description: string;
   objectsOfTheIssue: string[];
@@ -106,6 +156,7 @@ export interface IPOData {
   closeDate: string;
   listingDate: string;
   timeline: IPOTimeline;
+  timelineFields?: IPOTimelineField[];
 
   priceBandLow: number;
   priceBandHigh: number;
@@ -114,6 +165,7 @@ export interface IPOData {
   issueSize: number;
   freshIssueSize: number;
   offerForSaleSize: number;
+  issueDetailsFields?: IPOIssueDetailField[];
   listingAt: string[];
   listedPrice: number;
 
@@ -127,11 +179,15 @@ export interface IPOData {
     retail: number;
     total: number;
   };
+  subscriptionFields?: IPOSubscriptionField[];
   quota: IPOQuota;
+  quotaFields?: IPOQuotaField[];
   promoters: string[];
   promoterHolding: IPOPromoterHolding;
-  financials: FinancialYear[];
-  valuation: IPOValuation;
+  financials?: FinancialYear[];
+  financialTable?: FinancialTable;
+  valuation?: IPOValuation;
+  valuationFields?: IPOValuationField[];
   registrar: IPORegistrar;
   leadManagers: string[];
   contact: IPOContact;
@@ -148,6 +204,11 @@ export const DEFAULT_IPO_TEMPLATE: IPOData = {
   isVisible: true,
   name: '',
   symbol: '',
+  metaTitle: '',
+  metaDescription: '',
+  seoKeywords: '',
+  customSchema: '',
+  canonicalUrl: '',
   description: '',
   objectsOfTheIssue: [],
   type: IPOType.MAINBOARD,
@@ -163,6 +224,14 @@ export const DEFAULT_IPO_TEMPLATE: IPOData = {
     creditOfShares: '',
     listingDate: ''
   },
+  timelineFields: [
+    { id: 'openDate', label: 'Open Date', value: '' },
+    { id: 'closeDate', label: 'Close Date', value: '' },
+    { id: 'basisOfAllotment', label: 'Basis of Allotment', value: '' },
+    { id: 'initiationOfRefunds', label: 'Initiation of Refunds', value: '' },
+    { id: 'creditOfShares', label: 'Credit of Shares', value: '' },
+    { id: 'listingDate', label: 'Listing Date', value: '' }
+  ],
   priceBandLow: 0,
   priceBandHigh: 0,
   faceValue: 10,
@@ -170,17 +239,54 @@ export const DEFAULT_IPO_TEMPLATE: IPOData = {
   issueSize: 0,
   freshIssueSize: 0,
   offerForSaleSize: 0,
+  issueDetailsFields: [
+    { id: 'priceBandLow', label: 'Price Band Low', value: '' },
+    { id: 'priceBandHigh', label: 'Price Band High', value: '' },
+    { id: 'faceValue', label: 'Face Value', value: '' },
+    { id: 'lotSize', label: 'Lot Size', value: '' },
+    { id: 'issueSize', label: 'Issue Size (Cr)', value: '' },
+    { id: 'listedPrice', label: 'Listed Price (₹)', value: '' }
+  ],
   listingAt: ['NSE', 'BSE'],
   listedPrice: 0,
   currentGmp: 0,
   gmpUpdatedAt: '',
   gmpHistory: [],
   subscriptionStatus: { qib: 0, nii: 0, retail: 0, total: 0 },
+  subscriptionFields: [
+    { id: 'qib', label: 'QIB Sub', value: '' },
+    { id: 'nii', label: 'NII Sub', value: '' },
+    { id: 'retail', label: 'Retail Sub', value: '' },
+    { id: 'total', label: 'Total Sub', value: '' }
+  ],
   quota: { qib: 50, nii: 15, retail: 35 },
+  quotaFields: [
+    { id: 'qibQuota', label: 'QIB Quota (%)', value: '' },
+    { id: 'niiQuota', label: 'NII Quota (%)', value: '' },
+    { id: 'retailQuota', label: 'Retail Quota (%)', value: '' }
+  ],
   promoters: [],
   promoterHolding: { preIssue: 0, postIssue: 0 },
   financials: [],
-  valuation: { eps: 0, pe: 0, industryPe: 0, marketCap: 0, ronw: 0, nav: 0 },
+  financialTable: {
+    columns: [
+      { id: 'year', label: 'Year' },
+      { id: 'revenue', label: 'Revenue (Cr)' },
+      { id: 'expense', label: 'Expense (Cr)' },
+      { id: 'profit', label: 'Profit (Cr)' },
+      { id: 'assets', label: 'Assets (Cr)' },
+      { id: 'networth', label: 'Net Worth (Cr)' }
+    ],
+    rows: []
+  },
+  valuationFields: [
+    { id: 'eps', label: 'EPS', value: '' },
+    { id: 'pe', label: 'P/E Ratio', value: '' },
+    { id: 'industryPe', label: 'Industry P/E', value: '' },
+    { id: 'marketCap', label: 'Market Cap (Cr)', value: '' },
+    { id: 'ronw', label: 'RONW (%)', value: '' },
+    { id: 'nav', label: 'NAV', value: '' }
+  ],
   registrar: { name: '', phone: '', email: '', website: '' },
   leadManagers: [],
   contact: { address: '', phone: '', email: '', website: '' },

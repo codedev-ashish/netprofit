@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "../page.module.css";
-import { auth, db } from "../../../lib/firebase";
+import { db } from "../../../lib/firebase";
+import { auth } from "../../../lib/firebase-auth";
 import { onAuthStateChanged, updatePassword, deleteUser, reauthenticateWithCredential, EmailAuthProvider, updateProfile } from "firebase/auth";
 import { collection, query, where, getDocs, deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
@@ -15,6 +16,8 @@ export default function SettingsPage() {
   // Profile State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [profileError, setProfileError] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
@@ -40,7 +43,10 @@ export default function SettingsPage() {
         try {
           const userDoc = await getDoc(doc(db, "users", currentUser.uid));
           if (userDoc.exists()) {
-            setName(userDoc.data().name || currentUser.displayName || "");
+            const data = userDoc.data();
+            setName(data.name || currentUser.displayName || "");
+            setCity(data.city || "");
+            setState(data.state || "");
           } else {
             setName(currentUser.displayName || "");
           }
@@ -67,6 +73,8 @@ export default function SettingsPage() {
       // 1. Update Firestore
       await setDoc(doc(db, "users", user.uid), { 
         name: name.trim(),
+        city: city.trim(),
+        state: state.trim(),
         email: user.email
       }, { merge: true });
       
@@ -183,6 +191,26 @@ export default function SettingsPage() {
               style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-muted)', cursor: 'not-allowed' }}
             />
           </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>City</label>
+            <input 
+              type="text" 
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="e.g. Mumbai"
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>State</label>
+            <input 
+              type="text" 
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              placeholder="e.g. Maharashtra"
+              style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)' }}
+            />
+          </div>
           {profileError && <p style={{ color: '#e53e3e', fontSize: '0.85rem' }}>{profileError}</p>}
           {profileSuccess && <p style={{ color: '#48bb78', fontSize: '0.85rem' }}>{profileSuccess}</p>}
           
@@ -195,7 +223,7 @@ export default function SettingsPage() {
       {/* Change Password Section */}
       <section className="cleartax-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <Lock size={24} color="var(--primary-color)" />
+          <Lock size={24} color="var(--icon-color)" />
           <h2 style={{ fontSize: '1.25rem' }}>Change Password</h2>
         </div>
         

@@ -1,150 +1,106 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 import { db } from "../../lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
-import Link from "next/link";
+import IPOPageClient from "./IPOPageClient";
+import { Metadata } from "next";
+import BreadcrumbSchema from "../../components/BreadcrumbSchema";
 
-interface IPOItem {
-  id: string;
-  slug?: string;
-  name: string;
-  symbol: string;
-  type: string;
-  status: "upcoming" | "active" | "closed" | string;
-  priceBand?: string;
-  lotSize?: string;
-  issueSize?: number;
-  timeline?: {
-    openDate?: string;
-    closeDate?: string;
+import { doc, getDoc } from "firebase/firestore";
+
+export async function generateMetadata(): Promise<Metadata> {
+  let title = "IPO News, Updates & Subscription Status | NetProfit";
+  let description = "Track upcoming, active, and recently closed IPOs. Get live updates on price bands, issue dates, subscription rates, and allotment status. | NetProfit";
+  let keywords = undefined;
+
+  try {
+    const docRef = doc(db, "settings", "public_seo");
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data()?.ipo;
+      if (data) {
+        if (data.title) title = data.title;
+        if (data.description) description = data.description;
+        if (data.keywords) keywords = data.keywords;
+      }
+    }
+  } catch (e) {}
+
+  
+  const decodeTitle = (t: any) => t ? String(t).replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#39;/gi, "'").replace(/&#039;/gi, "'").replace(/&#x27;/gi, "'").replace(/&nbsp;/gi, ' ') : t;
+  return {
+    title: { absolute: decodeTitle(title) },
+    description,
+    ...(keywords && { keywords }),
+    openGraph: { title, description },
+    twitter: { title, description }
   };
-  openDate?: string;
-  closeDate?: string;
 }
 
-export default function IPOPage() {
-  const [ipos, setIpos] = useState<IPOItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"All" | "Mainboard" | "SME">("All");
+export const revalidate = 3600;
 
-  useEffect(() => {
-    const fetchIPOs = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "ipos"));
-        const data: IPOItem[] = [];
-        querySnapshot.forEach((doc) => {
-          data.push({ id: doc.id, ...doc.data() } as IPOItem);
-        });
-        setIpos(data);
-      } catch (error) {
-        console.error("Error fetching IPOs:", error);
-      } finally {
-        setLoading(false);
+export default async function IPOPage() {
+  let customSchema = undefined;
+  try {
+    const docRef = doc(db, "settings", "public_seo");
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const seoData = docSnap.data()?.ipo;
+      if (seoData?.customSchema) customSchema = seoData.customSchema;
+    }
+  } catch (e) {}
+
+  let ipos: any[] = [];
+  try {
+    const querySnapshot = await getDocs(collection(db, "ipos"));
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      let serializedData = { ...data };
+      if (serializedData.createdAt && typeof serializedData.createdAt.toDate === 'function') {
+        serializedData.createdAt = serializedData.createdAt.toDate().toISOString();
+      } else if (serializedData.createdAt && serializedData.createdAt.seconds) {
+        serializedData.createdAt = new Date(serializedData.createdAt.seconds * 1000).toISOString();
       }
-    };
+      
+      if (serializedData.updatedAt && typeof serializedData.updatedAt.toDate === 'function') {
+        serializedData.updatedAt = serializedData.updatedAt.toDate().toISOString();
+      } else if (serializedData.updatedAt && serializedData.updatedAt.seconds) {
+        serializedData.updatedAt = new Date(serializedData.updatedAt.seconds * 1000).toISOString();
+      }
+      ipos.push({ id: doc.id, ...serializedData });
+    });
+  } catch (error) {
+    console.error("Error fetching IPOs:", error);
+  }
 
-    fetchIPOs();
-  }, []);
-
-  const getStatusClass = (status: string) => {
-    if (status.toLowerCase() === 'upcoming') return styles.statusUpcoming;
-    if (status.toLowerCase() === 'active') return styles.statusActive;
-    return styles.statusClosed;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "IPO Watch",
+    "url": "https://netprofit.in/ipo",
+    "mainEntity": {
+      "@type": "ItemList",
+      "itemListElement": ipos.map((ipo, index) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "url": `https://netprofit.in/ipo/${ipo.slug || ipo.id}`
+      }))
+    }
   };
-
-  const filteredIpos = ipos.filter(ipo => {
-    // Check if the IPO is explicitly marked as not visible
-    if ((ipo as any).isVisible === false) return false;
-    
-    if (activeTab === "All") return true;
-    return ipo.type?.toLowerCase() === activeTab.toLowerCase();
-  });
 
   return (
     <div className={styles.container}>
+      <BreadcrumbSchema items={[{ name: "Home", url: "/" }, { name: "IPO Watch", url: "/ipo" }]} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {customSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: customSchema }} />
+      )}
       <div className={styles.hero}>
         <h1 className={styles.title}>IPO Watch</h1>
         <p className={styles.subtitle}>Track upcoming, active, and recently closed Initial Public Offerings.</p>
       </div>
 
       <div className={styles.contentWrapper}>
-        <div className={styles.tabsContainer}>
-          <button 
-            className={`${styles.tab} ${activeTab === "All" ? styles.tabActive : ""}`}
-            onClick={() => setActiveTab("All")}
-          >
-            All IPOs
-          </button>
-          <button 
-            className={`${styles.tab} ${activeTab === "Mainboard" ? styles.tabActive : ""}`}
-            onClick={() => setActiveTab("Mainboard")}
-          >
-            Mainboard
-          </button>
-          <button 
-            className={`${styles.tab} ${activeTab === "SME" ? styles.tabActive : ""}`}
-            onClick={() => setActiveTab("SME")}
-          >
-            SME
-          </button>
-        </div>
-
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>Loading IPO data...</div>
-        ) : filteredIpos.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>No IPOs currently listed in this category. Please check back later.</div>
-        ) : (
-          <div className={styles.ipoGrid}>
-            {filteredIpos.map((ipo) => (
-              <div key={ipo.id} className={styles.ipoCard}>
-                <div className={styles.cardHeader}>
-                  <div className={styles.companyInfo}>
-                    <span className={styles.companyName}>{ipo.name}</span>
-                    <span className={styles.companySymbol}>{ipo.symbol}</span>
-                  </div>
-                  <span className={`${styles.statusBadge} ${getStatusClass(ipo.status)}`}>
-                    {ipo.status}
-                  </span>
-                </div>
-                
-                <div className={styles.cardBody}>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Type</span>
-                    <span className={styles.detailValue}>{ipo.type || "N/A"}</span>
-                  </div>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>Lot Size</span>
-                    <span className={styles.detailValue}>{ipo.lotSize || "N/A"}</span>
-                  </div>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>IPO Open</span>
-                    <span className={styles.detailValue}>
-                      {ipo.timeline?.openDate || ipo.openDate ? new Date(ipo.timeline?.openDate || ipo.openDate!).toLocaleDateString() : "N/A"}
-                    </span>
-                  </div>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>IPO Close</span>
-                    <span className={styles.detailValue}>
-                      {ipo.timeline?.closeDate || ipo.closeDate ? new Date(ipo.timeline?.closeDate || ipo.closeDate!).toLocaleDateString() : "N/A"}
-                    </span>
-                  </div>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>IPO Size</span>
-                    <span className={styles.detailValue}>
-                      {ipo.issueSize ? `${ipo.issueSize} Cr` : "N/A"}
-                    </span>
-                  </div>
-                </div>
-
-                <Link href={`/ipo/${ipo.slug || ipo.id}`} className={styles.actionBtn}>
-                  View Details
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
+        <IPOPageClient initialIpos={ipos} />
       </div>
     </div>
   );

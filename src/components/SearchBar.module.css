@@ -1,0 +1,106 @@
+.searchContainer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  position: relative;
+  min-height: 36px;
+}
+
+.searchIconBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.searchIconBtn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--accent-color);
+}
+
+.searchForm {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 9999px;
+  overflow: hidden;
+  height: 36px;
+  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 400px;
+}
+
+.searchForm:focus-within {
+  border-color: var(--accent-color, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.searchSelect {
+  background: transparent;
+  border: none;
+  padding: 0 0.5rem 0 0.75rem;
+  color: var(--text-color, #334155);
+  font-size: 0.85rem;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  border-right: 1px solid var(--border-color, #e2e8f0);
+  height: 100%;
+}
+
+.searchSelect:focus {
+  outline: none;
+}
+
+.searchSelect option {
+  color: #334155;
+  background-color: #ffffff;
+}
+
+.searchInput {
+  flex-grow: 1;
+  background: transparent;
+  border: none;
+  padding: 0 0.75rem;
+  color: var(--text-color, #334155);
+  font-size: 0.9rem;
+  outline: none;
+  width: 100%;
+  min-width: 100px;
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted, #94a3b8);
+}
+
+.searchButton {
+  background: transparent;
+  border: none;
+  padding: 0 0.75rem;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  transition: color 0.2s;
+}
+
+.searchButton:hover {
+  color: var(--accent-color, #3b82f6);
+}
+
+@media (max-width: 768px) {
+  .searchForm {
+    width: 100%;
+    max-width: none;
+    margin: 0.5rem 0;
+  }
+}

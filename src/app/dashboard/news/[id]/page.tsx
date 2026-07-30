@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { db } from "../../../../lib/firebase";
+import { db } from "@/lib/firebase";
 import { doc, getDoc, collection, getDocs, query, orderBy, limit, where } from "firebase/firestore";
 import Link from "next/link";
-import styles from "../../../news/[id]/page.module.css";
+import styles from "@/app/news/[slug]/page.module.css";
 import { ArrowLeft } from "lucide-react";
 
 export default function DashboardNewsDetailsPage() {
@@ -109,7 +109,7 @@ export default function DashboardNewsDetailsPage() {
             <img src={news.imageUrl} alt={news.title} className={styles.coverImage} />
           </div>
         )}
-        <div className={styles.articleBody} dangerouslySetInnerHTML={{ __html: news.content }} />
+        <div className={styles.articleBody} dangerouslySetInnerHTML={{ __html: news.content.replace(/http:\/\//gi, 'https://') }} />
       </div>
 
       {relatedNews.length > 0 && (

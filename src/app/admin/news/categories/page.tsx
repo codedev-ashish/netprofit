@@ -3,14 +3,16 @@
 import { useState, useEffect } from "react";
 import styles from "../../page.module.css";
 import { db } from "../../../../lib/firebase";
-import { collection, getDocs, deleteDoc, doc, addDoc, serverTimestamp } from "firebase/firestore";
-import { Trash2, Plus } from "lucide-react";
+import { collection, getDocs, deleteDoc, doc, addDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { Trash2, Plus, Edit2, Check, X } from "lucide-react";
 
 export default function AdminNewsCategories() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState("");
 
   useEffect(() => {
     fetchCategories();
@@ -58,6 +60,29 @@ export default function AdminNewsCategories() {
       } catch (error) {
         console.error("Error deleting category:", error);
       }
+    }
+  };
+
+  const startEditing = (c: any) => {
+    setEditingCategoryId(c.id);
+    setEditingCategoryName(c.name);
+  };
+
+  const cancelEditing = () => {
+    setEditingCategoryId(null);
+    setEditingCategoryName("");
+  };
+
+  const handleUpdateCategory = async (id: string) => {
+    if (!editingCategoryName.trim()) return;
+    try {
+      await updateDoc(doc(db, "news_categories", id), { name: editingCategoryName });
+      setEditingCategoryId(null);
+      setEditingCategoryName("");
+      fetchCategories();
+    } catch (e) {
+      console.error("Error updating category", e);
+      alert("Failed to update category");
     }
   };
 
@@ -111,7 +136,7 @@ export default function AdminNewsCategories() {
               
               return (
                 <div key={c.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px'}}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                     <div style={{
                       width: '40px', 
                       height: '40px', 
@@ -122,16 +147,43 @@ export default function AdminNewsCategories() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontWeight: 'bold',
-                      fontSize: '1.2rem'
+                      fontSize: '1.2rem',
+                      flexShrink: 0
                     }}>
                       {firstLetter}
                     </div>
-                    <strong style={{fontSize: '1.1rem'}}>{c.name}</strong> 
+                    {editingCategoryId === c.id ? (
+                      <input 
+                        type="text" 
+                        value={editingCategoryName} 
+                        onChange={(e) => setEditingCategoryName(e.target.value)}
+                        style={{ padding: '0.5rem', width: '100%', maxWidth: '300px', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-color)' }}
+                        autoFocus
+                      />
+                    ) : (
+                      <strong style={{fontSize: '1.1rem'}}>{c.name}</strong> 
+                    )}
                   </div>
                   <div style={{display: 'flex', gap: '1rem'}}>
-                    <button onClick={() => deleteCategory(c.id, c.name)} style={{color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
-                      <Trash2 size={16}/> Delete
-                    </button>
+                    {editingCategoryId === c.id ? (
+                      <>
+                        <button onClick={() => handleUpdateCategory(c.id)} style={{color: '#10b981', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                          <Check size={16}/> Save
+                        </button>
+                        <button onClick={cancelEditing} style={{color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                          <X size={16}/> Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => startEditing(c)} style={{color: '#60a5fa', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                          <Edit2 size={16}/> Edit
+                        </button>
+                        <button onClick={() => deleteCategory(c.id, c.name)} style={{color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
+                          <Trash2 size={16}/> Delete
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               );

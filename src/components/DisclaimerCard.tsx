@@ -37,7 +37,7 @@ export default function DisclaimerCard({ toolSlug }: { toolSlug: string }) {
       borderRadius: '16px', 
       boxShadow: 'var(--shadow-lg)' 
     }}>
-      <h4 style={{ color: 'var(--text-color)', marginBottom: '0.75rem', fontSize: '1.2rem', fontWeight: 700 }}>Disclaimer</h4>
+      <h3 style={{ color: 'var(--text-color)', marginBottom: '0.75rem', fontSize: '1.2rem', fontWeight: 700 }}>Disclaimer</h3>
       <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0 }}>
         {disclaimer}
       </p>

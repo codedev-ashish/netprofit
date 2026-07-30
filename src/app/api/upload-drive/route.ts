@@ -104,6 +104,11 @@ export async function POST(req: Request) {
           cleanName(taxYearVal),
           file.name,
         ].join('/');
+      } else if (uploadType === 'settings') {
+        s3Key = [
+          'settings',
+          file.name,
+        ].join('/');
       } else {
         // user-upload/{business}/{service}/{tax-year}/{period}/{filename}
         s3Key = [
@@ -200,10 +205,14 @@ export async function POST(req: Request) {
 
       // Resolve folder path
       let currentFolderId = parentFolderId;
-      const folderPath =
-        uploadType === 'admin'
-          ? ['admin-documents', cleanName(userVal), cleanName(businessVal), cleanName(serviceVal), cleanName(taxYearVal)]
-          : ['user-upload', cleanName(businessVal), cleanName(serviceVal), cleanName(taxYearVal), cleanName(periodVal)];
+      let folderPath: string[] = [];
+      if (uploadType === 'admin') {
+        folderPath = ['admin-documents', cleanName(userVal), cleanName(businessVal), cleanName(serviceVal), cleanName(taxYearVal)];
+      } else if (uploadType === 'settings') {
+        folderPath = ['settings'];
+      } else {
+        folderPath = ['user-upload', cleanName(businessVal), cleanName(serviceVal), cleanName(taxYearVal), cleanName(periodVal)];
+      }
 
       for (const folder of folderPath) {
         currentFolderId = await getOrCreateFolder(drive, folder, currentFolderId);

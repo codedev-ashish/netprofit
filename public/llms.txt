@@ -1,0 +1,24 @@
+# NetProfit
+NetProfit is a professional platform for Tax, Legal & Business Registration in India.
+
+## Services
+We offer services such as:
+- [Company Registration (Pvt Ltd)](https://netprofit.in/services/private-limited-company)
+- [LLP Registration](https://netprofit.in/services/limited-liability-partnership)
+- [OPC Registration](https://netprofit.in/services/opc-registration)
+- [Nidhi Company](https://netprofit.in/services/nidhi-company)
+- [GST Registration](https://netprofit.in/services/gst-registration)
+- [GST Return Filing](https://netprofit.in/services/gst-return)
+- [Income Tax Return Filing](https://netprofit.in/services/income-tax-return)
+- [TDS Return Filing](https://netprofit.in/services/tds-return)
+- [PF & ESIC Return](https://netprofit.in/services/pf-return)
+- [MSME / Udyam Registration](https://netprofit.in/services/msme-registration)
+- [FSSAI License](https://netprofit.in/services/fssai-license)
+- [Trade License](https://netprofit.in/services/trade-license)
+- [Trademark Registration](https://netprofit.in/services/trademark)
+
+## Resources
+- [Home Page](https://netprofit.in)
+- [Tools](https://netprofit.in/tools)
+- [News](https://netprofit.in/news)
+- [IPOs](https://netprofit.in/ipo)

@@ -126,7 +126,7 @@ export default function AdminDashboard() {
                         transition: 'background-color 0.2s'
                       }}
                     >
-                      <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--primary-color)' }}>
+                      <td style={{ padding: '1rem', fontSize: '0.9rem', color: '#60a5fa', fontWeight: 600, fontFamily: 'monospace' }}>
                         {sub.userId.substring(0, 8)}...
                       </td>
                       <td style={{ padding: '1rem' }}><strong>{sub.serviceName}</strong></td>

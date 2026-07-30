@@ -100,10 +100,13 @@ export default function SipCalculator() {
           {mode === "SIP" ? (
             <div className={styles.inputGroup}>
               <div className={styles.inputHeader}>
-                <span className={styles.inputLabel}>Monthly investment</span>
+                <label htmlFor="monthlyInvestment" className={styles.inputLabel}>Monthly investment</label>
                 <div className={styles.inputFieldWrapper}>
                   <span className={styles.inputPrefix}>₹</span>
                   <input 
+                    id="monthlyInvestment"
+                    name="monthlyInvestment"
+                    aria-label="Monthly investment"
                     type="number" 
                     className={styles.inputField} 
                     value={monthlyInvestment}
@@ -112,6 +115,9 @@ export default function SipCalculator() {
                 </div>
               </div>
               <input 
+                id="monthlyInvestmentSlider"
+                name="monthlyInvestmentSlider"
+                aria-label="Monthly investment Slider"
                 type="range" 
                 min="500" 
                 max="1000000" 
@@ -124,10 +130,13 @@ export default function SipCalculator() {
           ) : (
             <div className={styles.inputGroup}>
               <div className={styles.inputHeader}>
-                <span className={styles.inputLabel}>Total investment</span>
+                <label htmlFor="lumpsumInvestment" className={styles.inputLabel}>Total investment</label>
                 <div className={styles.inputFieldWrapper}>
                   <span className={styles.inputPrefix}>₹</span>
                   <input 
+                    id="lumpsumInvestment"
+                    name="lumpsumInvestment"
+                    aria-label="Total investment"
                     type="number" 
                     className={styles.inputField} 
                     value={lumpsumInvestment}
@@ -136,6 +145,9 @@ export default function SipCalculator() {
                 </div>
               </div>
               <input 
+                id="lumpsumInvestmentSlider"
+                name="lumpsumInvestmentSlider"
+                aria-label="Total investment Slider"
                 type="range" 
                 min="500" 
                 max="10000000" 
@@ -149,9 +161,12 @@ export default function SipCalculator() {
 
           <div className={styles.inputGroup}>
             <div className={styles.inputHeader}>
-              <span className={styles.inputLabel}>Expected return rate (p.a)</span>
+              <label htmlFor="returnRate" className={styles.inputLabel}>Expected return rate (p.a)</label>
               <div className={styles.inputFieldWrapper}>
                 <input 
+                  id="returnRate"
+                  name="returnRate"
+                  aria-label="Expected return rate"
                   type="number" 
                   className={styles.inputField} 
                   value={returnRate}
@@ -161,6 +176,9 @@ export default function SipCalculator() {
               </div>
             </div>
             <input 
+              id="returnRateSlider"
+              name="returnRateSlider"
+              aria-label="Expected return rate Slider"
               type="range" 
               min="1" 
               max="30" 
@@ -173,9 +191,12 @@ export default function SipCalculator() {
 
           <div className={styles.inputGroup}>
             <div className={styles.inputHeader}>
-              <span className={styles.inputLabel}>Time period</span>
+              <label htmlFor="timePeriod" className={styles.inputLabel}>Time period</label>
               <div className={styles.inputFieldWrapper}>
                 <input 
+                  id="timePeriod"
+                  name="timePeriod"
+                  aria-label="Time period"
                   type="number" 
                   className={styles.inputField} 
                   value={timePeriod}
@@ -185,6 +206,9 @@ export default function SipCalculator() {
               </div>
             </div>
             <input 
+              id="timePeriodSlider"
+              name="timePeriodSlider"
+              aria-label="Time period Slider"
               type="range" 
               min="1" 
               max="40" 

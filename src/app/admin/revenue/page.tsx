@@ -5,12 +5,16 @@ import styles from "../page.module.css";
 import { db } from "../../../../src/lib/firebase";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { DollarSign, RefreshCw } from "lucide-react";
+import { DollarSign, RefreshCw, Tag, Wallet, TrendingDown, Download } from "lucide-react";
+import { generateInvoice } from "../../../../src/lib/generateInvoice";
 
 export default function RevenueDashboard() {
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalGrossIncome, setTotalGrossIncome] = useState(0);
+  const [totalDiscount, setTotalDiscount] = useState(0);
+  const [totalNetIncome, setTotalNetIncome] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
   const [graphData, setGraphData] = useState<any[]>([]);
 
   useEffect(() => {
@@ -64,8 +68,63 @@ export default function RevenueDashboard() {
         amount: incomeByDate[date]
       })).reverse(); // chronological
 
-      setSubscriptions(enrichedSubs);
-      setTotalIncome(income);
+      // Fetch orders for detailed revenue metrics AND table display
+      const allTransactions: any[] = [];
+      try {
+        const ordersSnap = await getDocs(query(collection(db, "orders")));
+        let gross = 0;
+        let disc = 0;
+        let net = 0;
+        ordersSnap.forEach((doc) => {
+          const d = doc.data();
+          const amount = d.amount || d.basePrice || 0;
+          gross += (d.basePrice || amount);
+          disc += (d.discountAmount || 0);
+          net += amount;
+          
+          allTransactions.push({
+            id: doc.id,
+            ...d,
+            type: 'order',
+            userName: d.userName || d.userEmail || d.userId,
+            date: d.createdAt?.toDate ? d.createdAt.toDate() : (d.createdAt ? new Date(d.createdAt) : new Date()),
+            amount: amount,
+            invoiceNumber: d.invoiceNumber || `INV-${doc.id.slice(0, 8).toUpperCase()}`
+          });
+        });
+        setTotalGrossIncome(gross);
+        setTotalDiscount(disc);
+        setTotalNetIncome(net);
+      } catch (e) {
+        console.warn("Could not fetch orders for revenue metrics", e);
+      }
+
+      // Add enriched subscriptions to transactions
+      enrichedSubs.forEach(sub => {
+        allTransactions.push({
+          ...sub,
+          type: 'subscription',
+          date: sub.purchaseDate?.toDate ? sub.purchaseDate.toDate() : new Date(),
+          invoiceNumber: sub.invoiceNumber || `SUB-${sub.id.slice(0, 8).toUpperCase()}`
+        });
+      });
+
+      // Sort all transactions chronologically descending
+      allTransactions.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+      // Fetch expenses
+      try {
+        const expensesSnap = await getDocs(collection(db, "expenses"));
+        let exp = 0;
+        expensesSnap.forEach((doc) => {
+          exp += (doc.data().amount || 0);
+        });
+        setTotalExpenses(exp);
+      } catch (e) {
+        console.warn("Could not fetch expenses", e);
+      }
+
+      setSubscriptions(allTransactions);
       setGraphData(chartData);
       setLoading(false);
     } catch (err) {
@@ -83,25 +142,44 @@ export default function RevenueDashboard() {
       <h1 className={styles.pageTitle}>Revenue Dashboard</h1>
       <p className={styles.pageSubtitle}>Monitor income, refunds, and transaction history.</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
         <div style={{ backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
           <div style={{ backgroundColor: '#ecfdf5', padding: '1rem', borderRadius: '50%', color: '#10b981' }}>
             <DollarSign size={28} />
           </div>
           <div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Total Income</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-color)' }}>₹{totalIncome.toLocaleString()}</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Gross Income</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-color)' }}>₹{totalGrossIncome.toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div style={{ backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ backgroundColor: '#fffbeb', padding: '1rem', borderRadius: '50%', color: '#f59e0b' }}>
+            <Tag size={28} />
+          </div>
+          <div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Total Discounts</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-color)' }}>₹{totalDiscount.toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div style={{ backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <div style={{ backgroundColor: '#eff6ff', padding: '1rem', borderRadius: '50%', color: '#3b82f6' }}>
+            <Wallet size={28} />
+          </div>
+          <div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Net Income</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-color)' }}>₹{totalNetIncome.toLocaleString()}</div>
           </div>
         </div>
 
         <div style={{ backgroundColor: 'var(--card-bg)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '1rem', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
           <div style={{ backgroundColor: '#fef2f2', padding: '1rem', borderRadius: '50%', color: '#ef4444' }}>
-            <RefreshCw size={28} />
+            <TrendingDown size={28} />
           </div>
           <div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Total Refunds</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-color)' }}>₹0</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Feature coming soon</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Expenses</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-color)' }}>₹{totalExpenses.toLocaleString()}</div>
           </div>
         </div>
       </div>
@@ -137,34 +215,70 @@ export default function RevenueDashboard() {
             <thead>
               <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)' }}>
                 <th style={{ padding: '1rem', fontWeight: 600 }}>Date</th>
+                <th style={{ padding: '1rem', fontWeight: 600 }}>Invoice No.</th>
                 <th style={{ padding: '1rem', fontWeight: 600 }}>User Name</th>
                 <th style={{ padding: '1rem', fontWeight: 600 }}>Service Name</th>
-                <th style={{ padding: '1rem', fontWeight: 600 }}>Period</th>
+                <th style={{ padding: '1rem', fontWeight: 600 }}>Type</th>
                 <th style={{ padding: '1rem', fontWeight: 600 }}>Amount</th>
+                <th style={{ padding: '1rem', fontWeight: 600, textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {subscriptions.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No transactions found.</td>
+                  <td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No transactions found.</td>
                 </tr>
               ) : (
-                subscriptions.map(sub => (
-                  <tr key={sub.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                subscriptions.map(tx => (
+                  <tr key={tx.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: '1rem', color: 'var(--text-color)' }}>
-                      {sub.purchaseDate ? sub.purchaseDate.toDate().toLocaleString() : 'N/A'}
+                      {tx.date ? tx.date.toLocaleDateString() : 'N/A'}
                     </td>
-                    <td style={{ padding: '1rem', color: 'var(--text-color)' }} title={sub.userId}>
-                      {sub.userName}
+                    <td style={{ padding: '1rem', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                      {tx.invoiceNumber}
+                    </td>
+                    <td style={{ padding: '1rem', color: 'var(--text-color)' }} title={tx.userId}>
+                      {tx.userName}
                     </td>
                     <td style={{ padding: '1rem', color: 'var(--text-color)' }}>
-                      {sub.serviceName}
+                      {tx.serviceName || tx.planName || 'Unknown'}
                     </td>
                     <td style={{ padding: '1rem', color: 'var(--text-color)', textTransform: 'capitalize' }}>
-                      {sub.period || 'N/A'}
+                      <span style={{ 
+                        padding: '0.2rem 0.5rem', 
+                        borderRadius: '4px', 
+                        fontSize: '0.8rem', 
+                        backgroundColor: tx.type === 'order' ? '#e0e7ff' : '#dcfce7',
+                        color: tx.type === 'order' ? '#3730a3' : '#166534'
+                      }}>
+                        {tx.type}
+                      </span>
                     </td>
                     <td style={{ padding: '1rem', fontWeight: 600, color: '#10b981' }}>
-                      ₹{(sub.amount || 0).toLocaleString()}
+                      ₹{(tx.amount || 0).toLocaleString()}
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'right' }}>
+                      <button 
+                        onClick={() => generateInvoice(tx)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.4rem 0.8rem',
+                          backgroundColor: 'var(--card-bg)',
+                          color: 'var(--accent-color)',
+                          border: '1px solid var(--accent-color)',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontWeight: 600,
+                          fontSize: '0.8rem',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--accent-color)'; e.currentTarget.style.color = 'white'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'var(--card-bg)'; e.currentTarget.style.color = 'var(--accent-color)'; }}
+                      >
+                        <Download size={14} /> PDF
+                      </button>
                     </td>
                   </tr>
                 ))

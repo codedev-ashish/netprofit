@@ -1,32 +1,57 @@
 :root {
-  --bg-color: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --text-color: #1a202c;
-  --text-muted: #4a5568;
-  --primary-color: #0c3866; /* Deep corporate blue */
-  --primary-hover: #08294f;
-  --accent-color: #ff6b00; /* Vibrant orange accent */
-  --accent-hover: #e56000;
-  --card-bg: #ffffff;
+  --bg-color: #f8fafc;
+  --bg-gradient: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  --bg-secondary: #f1f5f9;
+  --text-color: #0f172a;
+  --text-muted: #64748b;
+  --primary-text-color: #ffffff;
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --header-bg: #1e3a8a;
+  --header-bg-end: #0f172a;
+  --top-header-start: #ea580c;
+  --top-header-end: #f97316;
+  --icon-color: #ea580c;
+  --accent-color: #ea580c;
+  --accent-hover: #c2410c;
+  --card-bg: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  --card-border: rgba(15, 23, 42, 0.06);
   --border-color: #e2e8f0;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --radius: 8px;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+  --shadow: 0 8px 24px rgba(149, 157, 165, 0.08);
+  --shadow-lg: 0 20px 40px -4px rgba(149, 157, 165, 0.12), 0 8px 16px -4px rgba(149, 157, 165, 0.05);
+  --radius: 16px;
+  --hero-gradient: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-color: #0f172a;
-    --bg-secondary: #1e293b;
-    --text-color: #f8fafc;
-    --text-muted: #94a3b8;
-    --card-bg: #1e293b;
-    --border-color: #334155;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-  }
+[data-theme='dark'] {
+  --bg-color: #0f172a;
+  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+  --bg-secondary: #1e293b;
+  --text-color: #f8fafc;
+  --text-muted: #94a3b8;
+  --primary-text-color: #ffffff;
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --header-bg: #0f172a;
+  --header-bg-end: #1e293b;
+  --top-header-start: #c2410c;
+  --top-header-end: #ea580c;
+  --icon-color: #fb923c;
+  --accent-color: #f97316;
+  --accent-hover: #ea580c;
+  --card-bg: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  --card-border: rgba(255, 255, 255, 0.06);
+  --border-color: #334155;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5);
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --hero-gradient: linear-gradient(135deg, #0f172a 0%, #000000 100%);
+}
+
+
+html {
+  scroll-behavior: smooth;
 }
 
 * {
@@ -36,7 +61,7 @@
 }
 
 body {
-  background-color: var(--bg-color);
+  background: var(--bg-gradient, var(--bg-color));
   color: var(--text-color);
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   min-height: 100vh;
@@ -54,15 +79,15 @@ a {
 .premium-card, .cleartax-card {
   background: var(--card-bg);
   border-radius: var(--radius);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--card-border);
   box-shadow: var(--shadow);
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .premium-card:hover, .cleartax-card:hover {
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--primary-color);
   transform: translateY(-4px);
-  border-color: var(--primary-color);
+  border-color: transparent;
 }
 
 /* Utility buttons */
@@ -95,12 +120,25 @@ a {
 
 .btn-secondary:hover {
   background-color: var(--primary-color);
-  color: white;
+  color: var(--primary-text-color) ;
 }
 
 .rich-text-content {
   width: 100%;
   text-align: left;
+}
+
+.rich-text-content a {
+  color: var(--accent-color) !important;
+  text-decoration: underline !important;
+  font-weight: 600;
+  word-break: break-all;
+  transition: all 0.2s ease;
+}
+
+.rich-text-content a:hover {
+  color: var(--accent-hover) !important;
+  opacity: 0.8;
 }
 
 .rich-text-content * {
@@ -127,4 +165,12 @@ p {
 }
 .ql-align-left { text-align: left !important; }
 
+/* Global Form Input Resets for Dark/Light Mode Visibility */
+input, select, textarea {
+  color: var(--text-color);
+  background-color: var(--bg-color);
+}
 
+input[type="file"] {
+  color-scheme: light dark;
+}

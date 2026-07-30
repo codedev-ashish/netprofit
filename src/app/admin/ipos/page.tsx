@@ -56,6 +56,53 @@ export default function AdminIPOs() {
     }
   };
 
+  const getCalculatedStatus = (ipo: any) => {
+    if (!ipo) return "Upcoming";
+    const now = new Date();
+    const parseDate = (d?: string) => {
+      if (!d || d === "TBA") return null;
+      const parsed = new Date(d);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const openDate = parseDate(ipo.timeline?.openDate || ipo.openDate);
+    const closeDate = parseDate(ipo.timeline?.closeDate || ipo.closeDate);
+    const listingDate = parseDate(ipo.timeline?.listingDate || ipo.listingDate);
+    
+    if (closeDate) closeDate.setHours(16, 0, 0, 0); 
+    if (listingDate && now >= listingDate) return "Listed";
+    if (closeDate && now > closeDate) return "Closed";
+    if (openDate && now >= openDate) {
+      if (!closeDate || now <= closeDate) return "Open";
+    }
+    if (openDate && now < openDate) return "Upcoming";
+    return ipo.status;
+  };
+
+  const sortedIposList = [...iposList].sort((a, b) => {
+    const statusA = getCalculatedStatus(a).toLowerCase();
+    const statusB = getCalculatedStatus(b).toLowerCase();
+    
+    const statusPriority: Record<string, number> = {
+      'open': 1,
+      'upcoming': 2,
+      'listed': 3,
+      'closed': 4
+    };
+    
+    const priorityA = statusPriority[statusA] || 5;
+    const priorityB = statusPriority[statusB] || 5;
+    
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+    
+    const dateA = a.timeline?.openDate || a.openDate || "";
+    const dateB = b.timeline?.openDate || b.openDate || "";
+    
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -77,15 +124,15 @@ export default function AdminIPOs() {
         <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem'}}>
           {loading ? (
             <p style={{color: '#64748b'}}>Loading IPOs...</p>
-          ) : iposList.filter(ipo => ipo.type?.toLowerCase() === 'mainboard').length === 0 ? (
+          ) : sortedIposList.filter(ipo => ipo.type?.toLowerCase() === 'mainboard').length === 0 ? (
             <p style={{color: '#64748b'}}>No Mainboard IPOs found.</p>
           ) : (
-            iposList.filter(ipo => ipo.type?.toLowerCase() === 'mainboard').map(ipo => (
+            sortedIposList.filter(ipo => ipo.type?.toLowerCase() === 'mainboard').map(ipo => (
               <div key={ipo.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px'}}>
                 <div>
                   <strong style={{fontSize: '1.1rem', color: 'white'}}>{ipo.name} ({ipo.symbol})</strong> 
                   <div style={{fontSize: '0.85rem', color: '#94a3b8', marginTop: '0.25rem'}}>
-                    {ipo.type} • <span style={{textTransform: 'capitalize'}}>{ipo.status}</span>
+                    {ipo.type} • <span style={{textTransform: 'capitalize'}}>{getCalculatedStatus(ipo)}</span>
                   </div>
                 </div>
                 <div style={{display: 'flex', gap: '1rem'}}>
@@ -99,7 +146,7 @@ export default function AdminIPOs() {
                   <button onClick={() => deleteIPO(ipo.id)} style={{color: '#f87171', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem'}}>
                     <Trash2 size={16}/> Delete
                   </button>
-                </div>
+                 </div>
               </div>
             ))
           )}
@@ -111,15 +158,15 @@ export default function AdminIPOs() {
         <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem'}}>
           {loading ? (
             <p style={{color: '#64748b'}}>Loading IPOs...</p>
-          ) : iposList.filter(ipo => ipo.type?.toLowerCase() === 'sme').length === 0 ? (
+          ) : sortedIposList.filter(ipo => ipo.type?.toLowerCase() === 'sme').length === 0 ? (
             <p style={{color: '#64748b'}}>No SME IPOs found.</p>
           ) : (
-            iposList.filter(ipo => ipo.type?.toLowerCase() === 'sme').map(ipo => (
+            sortedIposList.filter(ipo => ipo.type?.toLowerCase() === 'sme').map(ipo => (
               <div key={ipo.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px'}}>
                 <div>
                   <strong style={{fontSize: '1.1rem', color: 'white'}}>{ipo.name} ({ipo.symbol})</strong> 
                   <div style={{fontSize: '0.85rem', color: '#94a3b8', marginTop: '0.25rem'}}>
-                    {ipo.type} • <span style={{textTransform: 'capitalize'}}>{ipo.status}</span>
+                    {ipo.type} • <span style={{textTransform: 'capitalize'}}>{getCalculatedStatus(ipo)}</span>
                   </div>
                 </div>
                 <div style={{display: 'flex', gap: '1rem'}}>
@@ -140,16 +187,16 @@ export default function AdminIPOs() {
         </div>
       </div>
 
-      {iposList.filter(ipo => !ipo.type || (ipo.type.toLowerCase() !== 'mainboard' && ipo.type.toLowerCase() !== 'sme')).length > 0 && (
+      {sortedIposList.filter(ipo => !ipo.type || (ipo.type.toLowerCase() !== 'mainboard' && ipo.type.toLowerCase() !== 'sme')).length > 0 && (
         <div className={`premium-card ${styles.managementCard}`} style={{marginTop: '2rem'}}>
           <h2>Other IPOs (Uncategorized)</h2>
           <div style={{display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem'}}>
-            {iposList.filter(ipo => !ipo.type || (ipo.type.toLowerCase() !== 'mainboard' && ipo.type.toLowerCase() !== 'sme')).map(ipo => (
+            {sortedIposList.filter(ipo => !ipo.type || (ipo.type.toLowerCase() !== 'mainboard' && ipo.type.toLowerCase() !== 'sme')).map(ipo => (
               <div key={ipo.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px'}}>
                 <div>
                   <strong style={{fontSize: '1.1rem', color: 'white'}}>{ipo.name} ({ipo.symbol})</strong> 
                   <div style={{fontSize: '0.85rem', color: '#94a3b8', marginTop: '0.25rem'}}>
-                    {ipo.type || 'Unknown'} • <span style={{textTransform: 'capitalize'}}>{ipo.status}</span>
+                    {ipo.type || 'Unknown'} • <span style={{textTransform: 'capitalize'}}>{getCalculatedStatus(ipo)}</span>
                   </div>
                 </div>
                 <div style={{display: 'flex', gap: '1rem'}}>

@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./page.module.css";
-import { auth, db } from "../../lib/firebase";
+import { db } from "../../lib/firebase";
+import { auth } from "../../lib/firebase-auth";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, signOut, sendPasswordResetEmail } from "firebase/auth";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
-export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
+export default function AuthPage({ defaultIsLogin = true }: { defaultIsLogin?: boolean }) {
+  const [isLogin, setIsLogin] = useState(defaultIsLogin);
   const [isResetPassword, setIsResetPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
@@ -19,7 +21,59 @@ export default function AuthPage() {
   const [message, setMessage] = useState("");
   const [showResend, setShowResend] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Registration restrictions
+  const [restrictEmails, setRestrictEmails] = useState(true);
+  const [allowedDomains, setAllowedDomains] = useState<string[]>([]);
+
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchAuthSettings = async () => {
+      try {
+        const docRef = doc(db, "settings", "auth");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.restrictEmails !== undefined) setRestrictEmails(data.restrictEmails);
+          if (data.allowedDomains) {
+            setAllowedDomains(data.allowedDomains);
+          }
+        } else {
+          // Defaults if not configured
+          setAllowedDomains([
+            "gmail.com", "zohomail.com", "zohomail.in", "outlook.com", 
+            "outlook.in", "live.com", "yahoo.com", "ymail.com", 
+            "rediffmail.com", "proton.me"
+          ]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch auth settings", err);
+      }
+    };
+    fetchAuthSettings();
+  }, []);
+
+  const getPasswordStrength = (pass: string) => {
+    if (!pass) return null;
+    const hasUpper = /[A-Z]/.test(pass);
+    const hasLower = /[a-z]/.test(pass);
+    const hasNumber = /[0-9]/.test(pass);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(pass);
+    const isLongEnough = pass.length >= 8;
+
+    let score = 0;
+    if (hasUpper) score++;
+    if (hasLower) score++;
+    if (hasNumber) score++;
+    if (hasSpecial) score++;
+    if (isLongEnough) score++;
+
+    if (score <= 3 || !isLongEnough) return { label: "Weak", color: "#ef4444", pct: "33%" };
+    if (score === 4) return { label: "Moderate", color: "#eab308", pct: "66%" };
+    return { label: "Strong", color: "#22c55e", pct: "100%" };
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +126,36 @@ export default function AuthPage() {
         }
         router.push("/dashboard");
       } else {
+        // Registration validations
+        if (password !== confirmPassword) {
+          setError("Passwords do not match.");
+          setLoading(false);
+          return;
+        }
+
+        const hasUpper = /[A-Z]/.test(password);
+        const hasLower = /[a-z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+        
+        if (password.length < 8 || !hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+          setError("Password must be at least 8 characters long and contain uppercase, lowercase, numbers, and special characters.");
+          setLoading(false);
+          return;
+        }
+
+        // Check domain restrictions before creating user
+        if (restrictEmails) {
+
+          const emailDomain = email.split('@')[1]?.toLowerCase();
+          
+          if (!emailDomain || !allowedDomains.includes(emailDomain)) {
+            setError(`Registration is restricted to supported email providers. Temporary or unauthorized emails are not allowed.`);
+            setLoading(false);
+            return;
+          }
+        }
+
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         
         await setDoc(doc(db, "users", userCredential.user.uid), {
@@ -88,6 +172,7 @@ export default function AuthPage() {
         setMessage("Registration successful! Please check your email for the verification link to log in.");
         setIsLogin(true);
         setPassword("");
+        setConfirmPassword("");
       }
     } catch (err: any) {
       // console.error("Auth error", err);
@@ -125,7 +210,7 @@ export default function AuthPage() {
   return (
     <div className={styles.container}>
       <div className={`cleartax-card ${styles.authCard}`}>
-        <h2>{isResetPassword ? "Reset Password" : (isLogin ? "Login" : "Create an Account")}</h2>
+        <h1>{isResetPassword ? "Reset Password" : (isLogin ? "Login" : "Create an Account")}</h1>
         <p>{isResetPassword ? "Enter your email to receive a password reset link." : (isLogin ? "Sign in to manage your services." : "Join us to buy and manage services.")}</p>
         
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -153,6 +238,11 @@ export default function AuthPage() {
               className={styles.inputField} 
             />
           </div>
+          {!isLogin && !isResetPassword && restrictEmails && allowedDomains.length > 0 && (
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem', marginTop: '-0.5rem' }}>
+              <strong>Allowed domains:</strong> {allowedDomains.map(d => `@${d}`).join(', ')}
+            </div>
+          )}
           {!isResetPassword && (
             <div className={styles.inputGroup}>
               <label htmlFor="password">Password</label>
@@ -162,6 +252,36 @@ export default function AuthPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required={!isResetPassword} 
+                className={styles.inputField} 
+                minLength={!isLogin ? 8 : undefined}
+              />
+              {!isLogin && password && (
+                <div style={{ marginTop: '8px' }}>
+                  <div style={{ height: '4px', width: '100%', backgroundColor: '#e5e7eb', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ 
+                      height: '100%', 
+                      width: getPasswordStrength(password)?.pct, 
+                      backgroundColor: getPasswordStrength(password)?.color,
+                      transition: 'all 0.3s ease'
+                    }} />
+                  </div>
+                  <div style={{ fontSize: '0.75rem', marginTop: '4px', color: getPasswordStrength(password)?.color, fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{getPasswordStrength(password)?.label}</span>
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {!isLogin && !isResetPassword && (
+            <div className={styles.inputGroup}>
+              <label htmlFor="confirmPassword">Confirm Password</label>
+              <input 
+                type="password" 
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required={!isLogin} 
                 className={styles.inputField} 
               />
             </div>

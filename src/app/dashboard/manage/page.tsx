@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import styles from "../page.module.css";
-import { db, auth } from "../../../lib/firebase";
+import { db } from "../../../lib/firebase";
+import { auth } from "../../../lib/firebase-auth";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -18,6 +19,11 @@ interface Subscription {
   nextDueDate?: string;
   businessId?: string;
   businessName?: string;
+  taxYear?: string;
+  startMonth?: string;
+  startYear?: string;
+  endMonth?: string;
+  endYear?: string;
 }
 
 export default function ManageServicesPage() {
@@ -108,7 +114,11 @@ export default function ManageServicesPage() {
                     <tr key={sub.id}>
                       <td><strong>{sub.serviceName}</strong></td>
                       <td>{sub.category}</td>
-                      <td style={{ textTransform: "capitalize" }}>{sub.period}</td>
+                      <td style={{ textTransform: "capitalize" }}>
+                        {sub.period}
+                        {sub.taxYear && <div style={{ fontSize: '0.8rem', color: 'var(--icon-color)', marginTop: '0.25rem', fontWeight: 500 }}>Tax Year: {sub.taxYear}</div>}
+                        {sub.startMonth && sub.startYear && <div style={{ fontSize: '0.8rem', color: 'var(--icon-color)', marginTop: '0.25rem', fontWeight: 500 }}>{sub.startMonth} {sub.startYear} - {sub.endMonth} {sub.endYear}</div>}
+                      </td>
                       <td>
                         <span className={`${styles.statusBadge} ${styles[sub.status] || ''}`}>
                           {sub.status}

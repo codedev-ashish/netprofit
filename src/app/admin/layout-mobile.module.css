@@ -1,0 +1,86 @@
+/* Add this to the bottom of the file */
+.sidebarOverlay {
+  display: none;
+}
+.closeSidebarBtn {
+  display: none;
+}
+.mobileMenuBtn {
+  display: none;
+}
+.mobileSiteName {
+  display: none;
+}
+.mobileHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 280px;
+  }
+  
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+  
+  .sidebarOverlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+    backdrop-filter: blur(2px);
+  }
+  
+  .closeSidebarBtn {
+    display: block;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    margin-left: auto;
+    cursor: pointer;
+  }
+
+  .mainContent {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .topbar {
+    justify-content: space-between;
+    padding: 0 1rem;
+  }
+
+  .mobileMenuBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+
+  .mobileSiteName {
+    display: block;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-color);
+  }
+
+  .logoutText {
+    display: none;
+  }
+
+  .pageContent {
+    padding: 1rem;
+  }
+}

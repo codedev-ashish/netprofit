@@ -18,6 +18,8 @@ export default function ServiceDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [business, setBusiness] = useState<any>(null);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [serviceRequests, setServiceRequests] = useState<any[]>([]);
+  const [actualServiceName, setActualServiceName] = useState<string>(serviceName);
   
   // Tax Year Selection
   const [availableTaxYears, setAvailableTaxYears] = useState<string[]>([]);
@@ -30,6 +32,7 @@ export default function ServiceDetailsPage() {
   const [docFile, setDocFile] = useState<File | null>(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [adminReturnType, setAdminReturnType] = useState("Original");
+  const [adminUploadMonth, setAdminUploadMonth] = useState("");
 
   useEffect(() => {
     if (!userId || !businessId || !serviceName) return;
@@ -53,13 +56,26 @@ export default function ServiceDetailsPage() {
           setBusiness(bData);
         }
 
-        // Fetch Service Requests matching this business and service to find IDs
-        const srQuery = query(collection(db, "service_requests"), where("userId", "==", userId), where("businessId", "==", businessId), where("serviceName", "==", serviceName));
+        // Fetch Service Requests matching this business
+        const srQuery = query(collection(db, "service_requests"), where("userId", "==", userId), where("businessId", "==", businessId));
         const srSnap = await getDocs(srQuery);
         const serviceRequestsMap: Record<string, string> = {};
+        const reqs: any[] = [];
+        let resolvedName = serviceName;
+
         srSnap.docs.forEach(d => {
-          serviceRequestsMap[d.id] = d.data().returnType || "Original";
+          const data = d.data();
+          const dataServiceName = data.serviceName || "";
+          
+          if (dataServiceName === serviceName || dataServiceName.toLowerCase().replace(/ /g, '-') === serviceName) {
+            resolvedName = dataServiceName;
+            serviceRequestsMap[d.id] = data.returnType || "Original";
+            reqs.push({ id: d.id, ...data });
+          }
         });
+        
+        setActualServiceName(resolvedName);
+        setServiceRequests(reqs);
         const srIds = Object.keys(serviceRequestsMap);
 
         let allUserDocs: any[] = [];
@@ -172,17 +188,30 @@ export default function ServiceDetailsPage() {
         businessName: business?.name || "Default Business",
         uploadedBy: "Admin",
         returnType: adminReturnType,
+        specificMonth: adminUploadMonth,
         createdAt: serverTimestamp()
       });
 
       alert("Document uploaded successfully.");
       setUploadPeriodNode(null);
       setDocFile(null);
+      setAdminUploadMonth("");
     } catch (error) {
       console.error("Error uploading document:", error);
       alert("Failed to upload document.");
     } finally {
       setUploadingDoc(false);
+    }
+  };
+
+  const handleUpdateStatus = async (reqId: string, newStatus: string) => {
+    try {
+      const { updateDoc } = await import("firebase/firestore");
+      await updateDoc(doc(db, "service_requests", reqId), { status: newStatus });
+      setServiceRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: newStatus } : r));
+    } catch (err) {
+      console.error("Error updating status", err);
+      alert("Failed to update status.");
     }
   };
 
@@ -251,6 +280,15 @@ export default function ServiceDetailsPage() {
   const filteredDocs = documents.filter(doc => (doc.taxYear || "Unknown Year") === selectedTaxYear);
   const periodsData: Record<string, any[]> = {};
   
+  // Initialize from service requests to ensure all months/quarters show even if empty
+  serviceRequests.forEach(req => {
+    if ((req.taxYear || "Unknown Year") === selectedTaxYear) {
+      let period = req.periodValue || req.quarter || req.month || req.period || req.frequency || "Annual";
+      if (period === "Monthly" || period === "Quarterly") period = "Annual";
+      if (!periodsData[period]) periodsData[period] = [];
+    }
+  });
+
   filteredDocs.forEach(doc => {
     let period = doc.periodValue || doc.quarter || doc.month || doc.period || doc.frequency || "Annual";
     if (period === "Monthly" || period === "Quarterly") period = "Annual";
@@ -271,7 +309,7 @@ export default function ServiceDetailsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 className={styles.pageTitle} style={{ marginBottom: '0.25rem' }}>
-            💼 {serviceName}
+            💼 {actualServiceName}
           </h1>
           <p className={styles.pageSubtitle}>🏢 {business?.name || "Business Details"}</p>
         </div>
@@ -308,13 +346,34 @@ export default function ServiceDetailsPage() {
                     style={{ padding: "1rem", fontSize: "0.95rem", fontWeight: 600, color: "var(--text-color)", cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: "space-between", backgroundColor: isExpanded ? "rgba(0,0,0,0.02)" : "transparent" }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      🕒 Period: {period}
+                      🕒 Period: {period === 'Q1' ? 'Q1 (Apr - Jun)' : period === 'Q2' ? 'Q2 (Jul - Sep)' : period === 'Q3' ? 'Q3 (Oct - Dec)' : period === 'Q4' ? 'Q4 (Jan - Mar)' : period}
                     </div>
                     {isExpanded ? <ChevronDown size={18} style={{ color: "var(--text-muted)" }} /> : <ChevronRight size={18} style={{ color: "var(--text-muted)" }} />}
                   </div>
                   
                   {isExpanded && (
                     <div style={{ padding: "0 1rem 1rem", display: "flex", flexDirection: "column", gap: "0.75rem", borderTop: "1px solid var(--border-color)" }}>
+                      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                        {serviceRequests
+                          .filter(r => (r.taxYear || "Unknown Year") === selectedTaxYear && (r.periodValue === period || r.quarter === period || r.month === period || r.period === period || r.frequency === period || (period === 'Annual' && (r.frequency === 'Annual' || !r.frequency))))
+                          .map(req => (
+                            <div key={req.id} style={{ background: 'var(--card-bg)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                              <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{req.returnType || 'Original'} Timeline:</div>
+                              <select
+                                value={req.status || 'Pending'}
+                                onChange={(e) => handleUpdateStatus(req.id, e.target.value)}
+                                style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '0.85rem', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-color)' }}
+                              >
+                                <option value="Pending">Pending</option>
+                                <option value="Accepted">Accepted</option>
+                                <option value="Documents Received & Checked">Documents Received & Checked</option>
+                                <option value="Filing Progress">Filing Progress (Takes 2-3 Working Days)</option>
+                                <option value="Filed">Filed</option>
+                              </select>
+                            </div>
+                          ))}
+                      </div>
+
                       <div style={{ marginTop: "1rem" }}>
                         {periodsData[period].length === 0 ? (
                           <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>No documents in this period.</p>
@@ -331,6 +390,11 @@ export default function ServiceDetailsPage() {
                                   {doc.returnType && (
                                     <span style={{ fontSize: "0.7rem", backgroundColor: doc.returnType === "Revision" ? "#f59e0b" : "#6366f1", color: "white", padding: "0.1rem 0.4rem", borderRadius: "12px" }}>
                                       {doc.returnType}
+                                    </span>
+                                  )}
+                                  {(doc.specificMonth || doc.uploadedMonth) && (
+                                    <span style={{ fontSize: "0.7rem", backgroundColor: "#8b5cf6", color: "white", padding: "0.1rem 0.4rem", borderRadius: "12px" }}>
+                                      {doc.specificMonth || doc.uploadedMonth}
                                     </span>
                                   )}
                                 </div>
@@ -368,7 +432,21 @@ export default function ServiceDetailsPage() {
                             >
                               <option value="Original">Original</option>
                               <option value="Revision">Revision</option>
+                              <option value="Challan">Challan</option>
                             </select>
+                            {period.startsWith('Q') && (
+                              <select
+                                value={adminUploadMonth}
+                                onChange={e => setAdminUploadMonth(e.target.value)}
+                                style={{ padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', fontSize: '0.85rem' }}
+                              >
+                                <option value="">Select Month</option>
+                                {period === 'Q1' && <><option value="April">April</option><option value="May">May</option><option value="June">June</option></>}
+                                {period === 'Q2' && <><option value="July">July</option><option value="August">August</option><option value="September">September</option></>}
+                                {period === 'Q3' && <><option value="October">October</option><option value="November">November</option><option value="December">December</option></>}
+                                {period === 'Q4' && <><option value="January">January</option><option value="February">February</option><option value="March">March</option></>}
+                              </select>
+                            )}
                             <button 
                               type="submit" 
                               disabled={uploadingDoc || !docFile} 

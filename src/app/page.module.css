@@ -4,7 +4,7 @@
 }
 
 .hero {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  background: linear-gradient(135deg, var(--header-bg) 0%, #0f172a 100%);
   color: white;
   padding: 6rem 2rem;
   text-align: center;
@@ -51,10 +51,12 @@
 }
 
 .subtitle {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   color: rgba(255, 255, 255, 0.9);
-  max-width: 700px;
+  max-width: 800px;
   margin: 0 auto;
+  text-align: justify;
+  line-height: 1.6;
 }
 
 .ctaGroup {
@@ -97,7 +99,7 @@
 }
 
 .altSection {
-  background-color: var(--bg-secondary);
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
   max-width: 100%;
   padding-left: 2rem;
   padding-right: 2rem;
@@ -107,6 +109,10 @@
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
+}
+
+.altSection .sectionTitle {
+  color: white;
 }
 
 .sectionTitle {
@@ -130,36 +136,58 @@
   gap: 1rem;
   text-align: center;
   align-items: center;
+  border-radius: var(--radius);
+  border: none !important;
+  color: white;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.featureCard:nth-child(4n+1) { background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); }
+.featureCard:nth-child(4n+2) { background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); }
+.featureCard:nth-child(4n+3) { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+.featureCard:nth-child(4n+4) { background: linear-gradient(135deg, #db2777 0%, #ec4899 100%); }
+
+.featureCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px -5px rgba(0,0,0,0.3);
 }
 
 .featureIcon {
-  font-size: 3rem;
+  font-size: 3.5rem;
   margin-bottom: 0.5rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
 }
 
 .featureCard h2 {
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   font-weight: 800;
-  color: var(--text-color);
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .featureCard p {
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.9);
   line-height: 1.6;
-  font-size: 1rem;
+  font-size: 1.05rem;
   margin-bottom: 1rem;
   flex-grow: 1;
 }
 
 .learnMore {
-  color: var(--accent-color);
-  font-weight: 600;
+  color: white;
+  background: rgba(255,255,255,0.2);
+  padding: 0.5rem 1.5rem;
+  border-radius: 20px;
+  font-weight: 700;
   text-decoration: none;
   font-size: 0.95rem;
+  transition: background 0.2s ease;
 }
 
 .learnMore:hover {
-  text-decoration: underline;
+  background: rgba(255,255,255,0.3);
+  text-decoration: none;
 }
 
 .servicesGrid {
@@ -169,22 +197,49 @@
 }
 
 .serviceItem {
-  padding: 1.5rem;
+  padding: 1.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   text-decoration: none;
-  border-left: 4px solid var(--accent-color);
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.serviceItem::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 0; width: 4px;
+  background: linear-gradient(180deg, #ec4899 0%, #ea580c 100%);
+  transition: width 0.3s ease;
+  z-index: -1;
+}
+
+.serviceItem:hover::before {
+  width: 100%;
+  opacity: 0.15;
+}
+
+.serviceItem:hover {
+  transform: translateY(-5px);
+  border-color: rgba(255,255,255,0.3) !important;
 }
 
 .serviceItem h3 {
-  font-size: 1.2rem;
-  color: var(--text-color);
+  font-size: 1.3rem;
+  color: white !important;
+  font-weight: 800;
 }
 
 .serviceItem p {
-  color: var(--text-muted);
-  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-size: 0.95rem;
 }
 
 .whyUs {
@@ -195,8 +250,51 @@
 }
 
 @media (max-width: 768px) {
+  .hero {
+    padding: 3rem 1rem;
+  }
+  .contentWrapper {
+    padding: 2rem 1rem;
+  }
+  .title {
+    font-size: 2.25rem;
+  }
+  .subtitle {
+    font-size: 1rem;
+  }
+  .section {
+    padding: 3rem 1rem;
+  }
+  .altSection {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .sectionTitle {
+    font-size: 1.75rem;
+    margin-bottom: 2rem;
+  }
+  .features, .servicesGrid {
+    grid-template-columns: 1fr;
+  }
   .whyUs {
     grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .stats h3 {
+    font-size: 2.25rem;
+  }
+  .stats {
+    padding: 1.5rem;
+  }
+  .imagePlaceholder {
+    height: 250px;
+  }
+  .ctaGroup {
+    flex-direction: column;
+    width: 100%;
+  }
+  .heroBtn {
+    width: 100%;
   }
 }
 
@@ -265,4 +363,26 @@
 .stats p {
   font-weight: 700;
   color: var(--text-color);
+}
+
+.linkHover:hover {
+  color: var(--accent-color) !important;
+}
+
+.toolBtnHover:hover {
+  gap: 0.75rem !important;
+}
+
+/* --- Light Mode Distinct Colorful Backgrounds --- */
+:global(html:not([data-theme='dark'])) .container > section:nth-child(4) {
+  background-color: #f0fdfa; /* Light Teal */
+}
+:global(html:not([data-theme='dark'])) .container > section:nth-child(5) {
+  background-color: #eff6ff; /* Light Blue */
+}
+:global(html:not([data-theme='dark'])) .container > section:nth-child(6) {
+  background-color: #faf5ff; /* Light Purple */
+}
+:global(html:not([data-theme='dark'])) .container > section:nth-child(7) {
+  background-color: #fffbeb; /* Light Amber/Yellow */
 }

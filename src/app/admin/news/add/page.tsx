@@ -1,16 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import styles from "../../page.module.css";
 import { db, storage } from "../../../../lib/firebase";
 import { collection, addDoc, serverTimestamp, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Plus } from "lucide-react";
 import dynamic from "next/dynamic";
-import "react-quill-new/dist/quill.snow.css";
 import { useRouter } from "next/navigation";
 
-const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
 export default function AdminNewsAdd() {
   const router = useRouter();
@@ -21,26 +20,72 @@ export default function AdminNewsAdd() {
   const [tags, setTags] = useState("");
   const [content, setContent] = useState("");
   const [excerpt, setExcerpt] = useState("");
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [seoKeywords, setSeoKeywords] = useState("");
+  const [customSchema, setCustomSchema] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [currentImage, setCurrentImage] = useState("");
+  const [imageName, setImageName] = useState("");
+  const [imageAlt, setImageAlt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [aiTopic, setAiTopic] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
-  const quillModules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }, { 'font': [] }],
-      [{ 'size': ['small', false, 'large', 'huge'] }],
-      ['bold', 'italic', 'underline', 'strike', 'blockquote', 'code-block'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'script': 'sub'}, { 'script': 'super' }],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-      [{ 'indent': '-1' }, { 'indent': '+1' }],
-      [{ 'direction': 'rtl' }],
-      [{ 'align': [] }],
-      ['link', 'image', 'video'],
-      ['clean']
+  const joditConfig = useMemo(() => ({
+    readonly: false,
+    height: 500,
+    placeholder: 'Start writing your amazing article...',
+    uploader: {
+      insertImageAsBase64URI: true
+    },
+    buttons: [
+      'bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', '|',
+      'font', 'fontsize', 'brush', 'paragraph', '|',
+      'align', 'outdent', 'indent', '|',
+      'ul', 'ol', '|',
+      'eraser', 'copyformat', 'hr', 'symbol', 
+      '\n',
+      'source', '|',
+      'undo', 'redo', '|',
+      'link', 'image', 'video', 'file', 'table', '|',
+      'find', 'preview', 'print', '|',
+      'fullsize', 'about'
     ],
-    table: true
-  };
+    controls: {
+      font: {
+        list: {
+          'Arial,Helvetica,sans-serif': 'Arial',
+          'Georgia,serif': 'Georgia',
+          'Impact,Charcoal,sans-serif': 'Impact',
+          'Tahoma,Geneva,sans-serif': 'Tahoma',
+          'Times New Roman,Times,serif': 'Times New Roman',
+          'Verdana,Geneva,sans-serif': 'Verdana',
+          'Courier New,Courier,monospace': 'Courier New',
+          'Comic Sans MS,Comic Sans,cursive': 'Comic Sans',
+          'Trebuchet MS,Helvetica,sans-serif': 'Trebuchet MS',
+          'Palatino Linotype,Book Antiqua,Palatino,serif': 'Palatino',
+          'Lucida Sans Unicode,Lucida Grande,sans-serif': 'Lucida Sans',
+          'Garamond,serif': 'Garamond',
+          'Brush Script MT,cursive': 'Brush Script',
+          'Calibri,sans-serif': 'Calibri'
+        }
+      }
+    },
+    showCharsCounter: true,
+    showWordsCounter: true,
+    showXPathInStatusbar: true,
+    resizer: {
+      showSize: true
+    },
+    toolbarAdaptive: false,
+    style: {
+      background: '#ffffff',
+      color: '#333333',
+      fontFamily: 'inherit'
+    }
+  }), []);
 
   useEffect(() => {
     fetchCategories();
@@ -73,6 +118,64 @@ export default function AdminNewsAdd() {
     }
   };
 
+  const handleGenerateAI = async () => {
+    if (!aiTopic) return;
+    setIsGenerating(true);
+    try {
+      const res = await fetch("/api/ai/generate-news", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: aiTopic })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate");
+      
+      if (data.title) setTitle(data.title);
+      if (data.title) setSlug(generateSlug(data.title));
+      if (data.excerpt) setExcerpt(data.excerpt);
+      if (data.content) setContent(data.content);
+      if (data.tags) setTags(data.tags);
+      if (data.metaTitle) setMetaTitle(data.metaTitle);
+      if (data.metaDescription) setMetaDescription(data.metaDescription);
+      
+      alert("AI successfully generated the article! Please review and publish.");
+    } catch (error: any) {
+      console.error(error);
+      alert("AI Generation failed: " + error.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleOptimizeSEO = async () => {
+    if (!content) {
+      alert("Please add some content first to generate SEO.");
+      return;
+    }
+    setIsOptimizing(true);
+    try {
+      const res = await fetch("/api/ai/generate-seo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, content, type: "news article" })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate SEO");
+
+      if (data.metaTitle) setMetaTitle(data.metaTitle);
+      if (data.metaDescription) setMetaDescription(data.metaDescription);
+      if (data.seoKeywords) setSeoKeywords(data.seoKeywords);
+      if (data.optimizedContent) setContent(data.optimizedContent);
+
+      alert("AI successfully optimized the SEO and injected contextual links!");
+    } catch (error: any) {
+      console.error(error);
+      alert("SEO Optimization failed: " + error.message);
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -94,7 +197,13 @@ export default function AdminNewsAdd() {
         tags: tags.split(',').map(t => t.trim()).filter(t => t),
         content,
         excerpt,
+        metaTitle,
+        metaDescription,
+        seoKeywords,
+        customSchema,
         imageUrl: uploadedImageUrl,
+        imageName,
+        imageAlt,
         date: new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }),
       };
 
@@ -114,6 +223,34 @@ export default function AdminNewsAdd() {
       <h1 className={styles.pageTitle}>Publish New Article</h1>
       <p className={styles.pageSubtitle}>Create and publish a new financial news article.</p>
       
+      <div className={`cleartax-card ${styles.managementCard}`} style={{ marginBottom: '2rem', border: '1px solid #c084fc', background: 'rgba(192, 132, 252, 0.05)' }}>
+        <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.5rem' }}>✨</span> AI Article Generator
+        </h2>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div className={styles.inputGroup} style={{ flex: '1 1 300px', marginBottom: 0 }}>
+            <label style={{ color: 'var(--text-color)' }}>Topic or Prompt for AI</label>
+            <input 
+              type="text" 
+              value={aiTopic} 
+              onChange={(e) => setAiTopic(e.target.value)} 
+              placeholder="e.g. Latest impact of AI on the stock market 2026..."
+              className={styles.inputField} 
+              style={{ border: '1px solid #d8b4fe' }}
+            />
+          </div>
+          <button 
+            type="button" 
+            onClick={handleGenerateAI} 
+            disabled={isGenerating || !aiTopic}
+            className={styles.submitBtn} 
+            style={{ background: 'linear-gradient(135deg, #a855f7, #7e22ce)', border: 'none', minWidth: '150px' }}
+          >
+            {isGenerating ? "Generating..." : "Generate News"}
+          </button>
+        </div>
+      </div>
+
       <div className={`cleartax-card ${styles.managementCard}`}>
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
@@ -123,6 +260,56 @@ export default function AdminNewsAdd() {
           <div className={styles.inputGroup}>
             <label>Slug (URL)</label>
             <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} required className={styles.inputField} />
+          </div>
+          <div className={styles.inputGroup}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
+              <label style={{ marginBottom: 0 }}>Custom SEO Meta Title (Optional)</label>
+              <button 
+                type="button" 
+                onClick={handleOptimizeSEO} 
+                disabled={isOptimizing || !content}
+                style={{ 
+                  background: 'linear-gradient(135deg, #a855f7, #7e22ce)', 
+                  border: 'none', 
+                  color: 'white', 
+                  padding: '0.4rem 0.8rem', 
+                  borderRadius: '4px', 
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem'
+                }}
+              >
+                {isOptimizing ? "Optimizing..." : "✨ AI Optimize SEO & Links"}
+              </button>
+            </div>
+            <input type="text" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} placeholder="Custom SEO Title" className={styles.inputField} />
+          </div>
+          <div className={styles.inputGroup}>
+            <label>Custom SEO Meta Description (Optional)</label>
+            <textarea rows={3} value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} placeholder="Custom SEO Description..." className={styles.inputField} />
+          </div>
+          <div className={styles.inputGroup}>
+            <label>SEO Keywords (Comma-separated)</label>
+            <input 
+              type="text" 
+              placeholder="e.g. business registration, tax filing" 
+              className={styles.inputField} 
+              value={seoKeywords}
+              onChange={(e) => setSeoKeywords(e.target.value)}
+            />
+          </div>
+          <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+            <label>Custom Schema (JSON-LD) (Optional)</label>
+            <textarea 
+              value={customSchema} 
+              onChange={(e) => setCustomSchema(e.target.value)} 
+              placeholder='{"@context": "https://schema.org", "@type": "NewsArticle", ...}' 
+              rows={4} 
+              className={styles.inputField} 
+              style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}
+            />
           </div>
           <div className={styles.inputGroup}>
             <label>Categories (Select multiple)</label>
@@ -187,6 +374,16 @@ export default function AdminNewsAdd() {
               }}
               className={styles.inputField} 
             />
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Image Name (Optional)</label>
+                <input type="text" value={imageName} onChange={(e) => setImageName(e.target.value)} placeholder="Name of the image" className={styles.inputField} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Image Alt Text (Optional)</label>
+                <input type="text" value={imageAlt} onChange={(e) => setImageAlt(e.target.value)} placeholder="SEO Alt text" className={styles.inputField} />
+              </div>
+            </div>
           </div>
           <div className={styles.inputGroup}>
             <label>Excerpt (Short summary)</label>
@@ -194,20 +391,21 @@ export default function AdminNewsAdd() {
           </div>
           <div className={styles.inputGroup} style={{ paddingBottom: '2rem' }}>
             <label>Full Content</label>
-            <div style={{ background: 'white', color: 'black', borderRadius: '8px', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-              <ReactQuill 
-                theme="snow" 
-                value={content} 
-                onChange={setContent} 
-                modules={quillModules}
-                style={{ height: '400px', marginBottom: '3rem' }} 
+            <div style={{ background: 'white', color: 'black', borderRadius: '8px', border: '1px solid var(--border-color)', overflow: 'hidden', marginBottom: '3rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
+              <JoditEditor 
+                value={content}
+                config={joditConfig}
+                onBlur={(newContent) => setContent(newContent)}
               />
             </div>
           </div>
           
-          <div style={{display: 'flex', gap: '1rem'}}>
+          <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
             <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
               {isSubmitting ? "Publishing..." : "Publish Article"}
+            </button>
+            <button type="button" className={styles.submitBtn} style={{backgroundColor: '#3b82f6'}} onClick={() => alert("More options coming soon!")}>
+              More Options
             </button>
             <button type="button" onClick={() => router.push("/admin/news")} className={styles.submitBtn} style={{backgroundColor: '#64748b'}}>
               Cancel

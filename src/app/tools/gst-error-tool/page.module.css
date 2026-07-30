@@ -1,0 +1,366 @@
+.container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 2rem;
+    gap: 2rem;
+  }
+}
+
+.uploadSection {
+  width: 100%;
+  background: var(--card-bg);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius);
+  padding: 4rem 1rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .uploadSection {
+    padding: 4rem 2rem;
+  }
+}
+
+.uploadSection:hover, .uploadSection.dragActive {
+  border-color: var(--primary-color);
+  background: var(--bg-secondary);
+}
+
+.uploadIcon {
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.uploadText {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.uploadSubtext {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.fileInput {
+  display: none;
+}
+
+.browseBtn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.2s ease;
+}
+
+.browseBtn:hover {
+  background: var(--primary-hover);
+}
+
+.errorMsg {
+  color: #ef4444;
+  background: #fee2e2;
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid #f87171;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Summary Bar */
+.summaryBar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .summaryBar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+.summaryLabel {
+  font-weight: 800;
+  color: var(--text-color);
+  margin-right: 0.5rem;
+}
+
+.summaryValue {
+  color: var(--text-muted);
+}
+
+/* Section Cards */
+.sectionCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.sectionCard {
+  flex: 1;
+  min-width: 120px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease;
+}
+
+.sectionCard:hover {
+  transform: translateY(-2px);
+}
+
+.sectionIcon {
+  color: #10b981; /* Green icon by default for OK */
+  margin-bottom: 0.25rem;
+}
+
+.sectionIconError {
+  color: #3b82f6; /* Blue icon for errors */
+  margin-bottom: 0.25rem;
+}
+
+.sectionName {
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.badgeOk {
+  background: #10b981;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.badgeError {
+  background: #3b82f6;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Table styling */
+.captureArea {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius);
+  transition: padding 0.2s ease;
+}
+
+.capturingMode {
+  padding: 2rem; /* Give it some breathing room for the image */
+  background: var(--bg-primary); /* Ensure proper background for html2canvas */
+}
+
+.watermark {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.tableContainer {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .tableHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.tableTitle {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-color);
+  margin: 0;
+}
+
+.tableActions {
+  display: flex;
+  gap: 1rem;
+}
+
+.resetBtn {
+  background: var(--bg-secondary);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetBtn:hover {
+  background: var(--text-color);
+  color: var(--bg-color);
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.dataTable th, .dataTable td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.dataTable th {
+  background: var(--bg-secondary);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.dataTable tr:last-child td {
+  border-bottom: none;
+}
+
+.dataTable tbody tr:hover {
+  background: rgba(0,0,0,0.02);
+}
+
+:global([data-theme='dark']) .dataTable tbody tr:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.dataTable td {
+  font-size: 0.95rem;
+  color: var(--text-color);
+  max-width: 300px;
+  word-wrap: break-word;
+}
+
+/* Share Section */
+.shareSection {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.shareTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.shareButtons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.shareBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: white;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.shareBtn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.whatsapp {
+  background: #25D366;
+}
+
+.telegram {
+  background: #0088cc;
+}
+
+.facebook {
+  background: #1877F2;
+}
+
+.screenshot {
+  background: #6366f1; /* Indigo color for screenshot */
+}

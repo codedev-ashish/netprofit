@@ -20,6 +20,8 @@ export default function WebsiteConfig() {
   const [twitter, setTwitter] = useState("");
   const [instagram, setInstagram] = useState("");
   const [linkedin, setLinkedin] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [telegram, setTelegram] = useState("");
   
   const [address, setAddress] = useState("");
   const [mobile, setMobile] = useState("");
@@ -48,6 +50,8 @@ export default function WebsiteConfig() {
             setTwitter(data.socialLinks.twitter || "");
             setInstagram(data.socialLinks.instagram || "");
             setLinkedin(data.socialLinks.linkedin || "");
+            setWhatsapp(data.socialLinks.whatsapp || "");
+            setTelegram(data.socialLinks.telegram || "");
           }
           if (data.address) setAddress(data.address);
           if (data.mobile) setMobile(data.mobile);
@@ -92,7 +96,7 @@ export default function WebsiteConfig() {
         seoMeta,
         logoUrl: uploadedLogoUrl,
         faviconUrl: uploadedFaviconUrl,
-        socialLinks: { facebook, twitter, instagram, linkedin },
+        socialLinks: { facebook, twitter, instagram, linkedin, whatsapp, telegram },
         address,
         mobile,
         email,
@@ -155,6 +159,17 @@ export default function WebsiteConfig() {
             </div>
           </div>
 
+          <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#60a5fa' }}>Sitemap & Search Console</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem', marginBottom: '2rem', padding: '1.5rem', background: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+            <div>
+              <strong style={{ fontSize: '1.1rem' }}>Live Sitemap URL:</strong> <a href={`${domain}/sitemap.xml`} target="_blank" rel="noreferrer" style={{ color: '#60a5fa', marginLeft: '0.5rem', fontSize: '1.1rem', textDecoration: 'underline' }}>{domain}/sitemap.xml</a>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>This XML sitemap is automatically generated in real-time. It contains all your active Services, News (with images), IPOs, Tools, and Pages. It is cached for performance.</p>
+              <p style={{ fontSize: '0.85rem', color: '#f59e0b', marginTop: '0.5rem', padding: '0.5rem', background: '#fef3c720', borderRadius: '4px', borderLeft: '3px solid #f59e0b' }}>
+                <strong>Note:</strong> Both Google and Bing have officially deprecated manual sitemap ping URLs (which is why they return 404/410 errors). Search engines now automatically detect your sitemap via your <code>robots.txt</code> file and crawl it based on its updates. No manual submission is needed!
+              </p>
+            </div>
+          </div>
+
           <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#60a5fa' }}>Contact Information</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
             <div className={styles.inputGroup}>
@@ -188,6 +203,14 @@ export default function WebsiteConfig() {
             <div className={styles.inputGroup}>
               <label>LinkedIn URL</label>
               <input type="url" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} className={styles.inputField} />
+            </div>
+            <div className={styles.inputGroup}>
+              <label>WhatsApp Link</label>
+              <input type="url" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className={styles.inputField} placeholder="e.g. https://wa.me/919876543210" />
+            </div>
+            <div className={styles.inputGroup}>
+              <label>Telegram Link</label>
+              <input type="url" value={telegram} onChange={(e) => setTelegram(e.target.value)} className={styles.inputField} placeholder="e.g. https://t.me/netprofit" />
             </div>
             <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
               <label>Footer Copyright Text</label>

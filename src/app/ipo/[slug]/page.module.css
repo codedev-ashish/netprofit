@@ -4,7 +4,7 @@
 }
 
 .hero {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  background: linear-gradient(135deg, var(--header-bg) 0%, #0f172a 100%);
   color: white;
   padding: 4rem 2rem;
   text-align: left;
@@ -101,7 +101,7 @@
 .sectionTitle {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #60a5fa;
+  color: var(--primary-color);
   margin-bottom: 1.5rem;
   border-bottom: 2px solid var(--bg-secondary);
   padding-bottom: 0.75rem;
@@ -121,7 +121,7 @@
 
 .detailLabel {
   font-size: 0.85rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   text-transform: uppercase;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -131,6 +131,9 @@
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-color);
+  line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .timelineItem {
@@ -170,7 +173,7 @@
 
 .gmpLabel {
   font-size: 0.9rem;
-  color: #94a3b8;
+  color: var(--text-muted);
   margin-top: 0.5rem;
   font-weight: 500;
 }
