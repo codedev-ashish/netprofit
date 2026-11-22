@@ -191,8 +191,9 @@ export async function GET(request: Request) {
             return new NextResponse(fallbackContent, {
               status: 200,
               headers: {
-                'Content-Type': 'text/plain; charset=utf-8',
-                'Cache-Control': 'public, max-age=3600',
+                'Content-Type': (fileName === 'llms.txt' ? 'text/markdown' : 'text/plain') + '; charset=utf-8',
+                'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate',
+                'X-Content-Type-Options': 'nosniff',
               },
             });
           }
@@ -205,7 +206,8 @@ export async function GET(request: Request) {
           status: 200,
           headers: {
             'Content-Type': 'text/plain; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600',
+            'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate',
+            'X-Content-Type-Options': 'nosniff',
           },
         });
       }
@@ -214,7 +216,8 @@ export async function GET(request: Request) {
           status: 200,
           headers: {
             'Content-Type': 'text/plain; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600',
+            'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate',
+            'X-Content-Type-Options': 'nosniff',
           },
         });
       }
@@ -223,7 +226,8 @@ export async function GET(request: Request) {
           status: 200,
           headers: {
             'Content-Type': 'text/plain; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600',
+            'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate',
+            'X-Content-Type-Options': 'nosniff',
           },
         });
       }
@@ -232,7 +236,8 @@ export async function GET(request: Request) {
           status: 200,
           headers: {
             'Content-Type': 'text/plain; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600',
+            'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate',
+            'X-Content-Type-Options': 'nosniff',
           },
         });
       }
@@ -241,7 +246,8 @@ export async function GET(request: Request) {
           status: 200,
           headers: {
             'Content-Type': 'text/plain; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600',
+            'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate',
+            'X-Content-Type-Options': 'nosniff',
           },
         });
       }
@@ -265,7 +271,8 @@ export async function GET(request: Request) {
       status: 200,
       headers: {
         'Content-Type': (data.contentType || 'text/plain') + '; charset=utf-8',
-        'Cache-Control': 'public, max-age=3600',
+        'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate',
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error: any) {
