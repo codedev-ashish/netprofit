@@ -22,6 +22,12 @@
   --shadow-lg: 0 20px 40px -4px rgba(149, 157, 165, 0.12), 0 8px 16px -4px rgba(149, 157, 165, 0.05);
   --radius: 16px;
   --hero-gradient: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+  --hero-gradient-pastel: linear-gradient(90deg, #f1f5f9 0%, #fce7f3 100%);
+  --bg-pastel-1: #fafafa;
+  --bg-pastel-2: #eef5d3;
+  --bg-pastel-3: #fcfaf4;
+  --bg-pastel-4: #f6f5ed;
+  --bg-pastel-5: #e6f4e8;
 }
 
 [data-theme='dark'] {
@@ -40,13 +46,19 @@
   --icon-color: #fb923c;
   --accent-color: #f97316;
   --accent-hover: #ea580c;
-  --card-bg: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
-  --card-border: rgba(255, 255, 255, 0.06);
-  --border-color: #334155;
+  --card-bg: linear-gradient(145deg, #1e293b 0%, #111827 100%);
+  --card-border: rgba(255, 255, 255, 0.12);
+  --border-color: rgba(255, 255, 255, 0.15);
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.5);
   --shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
   --hero-gradient: linear-gradient(135deg, #0f172a 0%, #000000 100%);
+  --hero-gradient-pastel: var(--bg-color);
+  --bg-pastel-1: var(--bg-secondary);
+  --bg-pastel-2: var(--bg-color);
+  --bg-pastel-3: var(--bg-secondary);
+  --bg-pastel-4: var(--bg-color);
+  --bg-pastel-5: var(--bg-secondary);
 }
 
 
@@ -148,6 +160,8 @@ a {
   word-break: keep-all !important;
   hyphens: none !important;
   max-width: 100%;
+  color: var(--text-color) !important;
+  background-color: transparent !important;
 }
 
 p {

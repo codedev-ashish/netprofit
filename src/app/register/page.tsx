@@ -1,4 +1,4 @@
-import AuthPage from "../auth/page";
+import AuthComponent from "../../components/AuthComponent";
 import { Metadata } from "next";
 
 import { db } from "../../lib/firebase";
@@ -6,7 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 
 export async function generateMetadata(): Promise<Metadata> {
   let title = "Register";
-  let description = "Create a new NetProfit account to access premium financial calculators, request CA services, and manage your business tax filings.";
+  let description = "Create your free NetProfit account. Access a complete suite of professional CA services, track business compliances, and seamlessly interact with our expert team.";
   let keywords = undefined;
 
   try {
@@ -34,5 +34,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function Register() {
-  return <AuthPage defaultIsLogin={false} />;
+  return <AuthComponent defaultIsLogin={false} />;
 }

@@ -235,7 +235,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
 
         {/* Top Breadcrumb & Hero Area */}
         {service.visibility?.hero !== false && (
-          <div style={{ background: 'linear-gradient(90deg, #f1f5f9 0%, #fce7f3 100%)', padding: '2rem 1rem 4rem 1rem', borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ background: 'var(--hero-gradient-pastel)', padding: '2rem 1rem 4rem 1rem', borderBottom: '1px solid var(--border-color)' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>
               <Link href="/" style={{ display: 'flex', alignItems: 'center', color: 'var(--text-muted)', textDecoration: 'none' }}><Home size={14} style={{ marginRight: '0.25rem' }} /> Home</Link>
@@ -359,7 +359,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                 const icons = [FileCheck, RefreshCw, TrendingUp, Zap, Shield, UserCheck, Globe];
                 const Icon = icons[index % icons.length];
                 return (
-                  <div key={index} style={{ backgroundColor: 'var(--card-bg)', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '2rem 1.5rem', width: '280px', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div key={index} style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '2rem 1.5rem', width: '280px', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                       <Icon size={32} color="#ea580c" strokeWidth={1.5} />
                     </div>
@@ -391,7 +391,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
 
               {/* Card 1 */}
-              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
                 <div style={{ marginBottom: '1.5rem', width: '64px', height: '64px', borderRadius: '16px', backgroundColor: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Briefcase size={32} color="#2563eb" strokeWidth={2} />
                 </div>
@@ -400,7 +400,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
               </div>
 
               {/* Card 2 */}
-              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
                 <div style={{ marginBottom: '1.5rem', width: '64px', height: '64px', borderRadius: '16px', backgroundColor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <CheckCircle2 size={32} color="#16a34a" strokeWidth={2} />
                 </div>
@@ -409,7 +409,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
               </div>
 
               {/* Card 3 */}
-              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
                 <div style={{ marginBottom: '1.5rem', width: '64px', height: '64px', borderRadius: '16px', backgroundColor: '#f3e8ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Layers size={32} color="#9333ea" strokeWidth={2} />
                 </div>
@@ -418,7 +418,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
               </div>
 
               {/* Card 4 */}
-              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
                 <div style={{ marginBottom: '1.5rem', width: '64px', height: '64px', borderRadius: '16px', backgroundColor: '#ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <IndianRupee size={32} color="#ea580c" strokeWidth={2} />
                 </div>
@@ -427,7 +427,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
               </div>
 
               {/* Card 5 */}
-              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
                 <div style={{ marginBottom: '1.5rem', width: '64px', height: '64px', borderRadius: '16px', backgroundColor: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ShieldCheck size={32} color="#dc2626" strokeWidth={2} />
                 </div>
@@ -436,7 +436,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
               </div>
 
               {/* Card 6 */}
-              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '2.5rem 2rem', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.02)' }}>
                 <div style={{ marginBottom: '1.5rem', width: '64px', height: '64px', borderRadius: '16px', backgroundColor: '#fef9c3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Award size={32} color="#ca8a04" strokeWidth={2} />
                 </div>
@@ -466,7 +466,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '2rem' }}>
 
               {/* Category 1 */}
-              <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '2.5rem 1.5rem', width: '320px', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', border: '1px solid rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '2.5rem 1.5rem', width: '320px', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ width: '70px', height: '70px', borderRadius: '50%', backgroundColor: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                   <User size={36} color="#ea580c" strokeWidth={1.5} />
                 </div>
@@ -478,7 +478,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
               </div>
 
               {/* Category 2 */}
-              <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '2.5rem 1.5rem', width: '320px', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', border: '1px solid rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '2.5rem 1.5rem', width: '320px', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ width: '70px', height: '70px', borderRadius: '50%', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                   <Building2 size={36} color="#ea580c" strokeWidth={1.5} />
                 </div>
@@ -490,7 +490,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
               </div>
 
               {/* Category 3 */}
-              <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '2.5rem 1.5rem', width: '320px', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', border: '1px solid rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '2.5rem 1.5rem', width: '320px', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ width: '70px', height: '70px', borderRadius: '50%', backgroundColor: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                   <Briefcase size={36} color="#ea580c" strokeWidth={1.5} />
                 </div>
@@ -502,7 +502,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
               </div>
 
               {/* Category 4 */}
-              <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '2.5rem 1.5rem', width: '320px', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', border: '1px solid rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '2.5rem 1.5rem', width: '320px', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ width: '70px', height: '70px', borderRadius: '50%', backgroundColor: '#f3e8ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                   <Globe size={36} color="#ea580c" strokeWidth={1.5} />
                 </div>
@@ -514,7 +514,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
               </div>
 
               {/* Category 5 */}
-              <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '2.5rem 1.5rem', width: '320px', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', border: '1px solid rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '2.5rem 1.5rem', width: '320px', textAlign: 'center', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <div style={{ width: '70px', height: '70px', borderRadius: '50%', backgroundColor: '#ffe4e6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
                   <HeartHandshake size={36} color="#ea580c" strokeWidth={1.5} />
                 </div>
@@ -532,7 +532,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
 
         {/* Sixth Section: 4-Step Process */}
         {service.visibility?.process !== false && (
-          <div style={{ backgroundColor: '#fafafa', padding: '5rem 1rem', borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ backgroundColor: 'var(--bg-pastel-1)', padding: '5rem 1rem', borderBottom: '1px solid var(--border-color)' }}>
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
             <h2 style={{ textAlign: 'center', fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '4rem', letterSpacing: '-0.02em' }}>
@@ -656,7 +656,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                   ]
                 }
               ]).map((plan) => (
-                <div key={plan.id} style={{ backgroundColor: 'var(--card-bg)', borderRadius: '8px', padding: '2rem 1.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
+                <div key={plan.id} style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '2rem 1.5rem', boxShadow: 'var(--shadow)', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ backgroundColor: '#ffedd5', width: '36px', height: '36px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
                     <FileCheck size={20} color="#ea580c" />
                   </div>
@@ -665,14 +665,14 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                   <div style={{ display: 'flex', alignItems: 'baseline', color: '#ea580c', marginBottom: '0.25rem' }}>
                     <span style={{ fontSize: '2.5rem', fontWeight: 700, lineHeight: 1 }}>{plan.price}</span>
                     {plan.period && (
-                      <span style={{ fontSize: '1rem', fontWeight: 600, color: '#334155', marginLeft: '0.25rem' }}>{plan.period}</span>
+                      <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-muted)', marginLeft: '0.25rem' }}>{plan.period}</span>
                     )}
                   </div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '2rem' }}>{plan.footnote || '*Exclusive of Taxes'}</div>
 
                   <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem 0', flexGrow: 1 }}>
                     {plan.features.map((feat, fidx) => (
-                      <li key={fidx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '1rem', fontSize: '0.95rem', color: '#334155', fontWeight: 500 }}>
+                      <li key={fidx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '1rem', fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                         {feat.included ? (
                           <CheckCircle2 size={20} color="#ea580c" style={{ flexShrink: 0, marginTop: '2px' }} />
                         ) : (
@@ -699,7 +699,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
         )}
 
         {/* Eighth Section: How to File with Animated Image */}
-        <div style={{ backgroundColor: '#eef5d3', padding: '5rem 1rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ backgroundColor: 'var(--bg-pastel-2)', padding: '5rem 1rem', position: 'relative', overflow: 'hidden' }}>
           <style dangerouslySetInnerHTML={{
             __html: `
             @keyframes floatImage {
@@ -769,7 +769,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                     {((service.processBenefits && service.processBenefits.length > 0) ? service.processBenefits : [
                       'Automated invoice matching', 'Real-time ITC reconciliation', 'Secure data handling', 'Expert support throughout'
                     ]).map((point, i) => (
-                      <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', fontSize: '0.95rem', color: '#334155', fontWeight: 500 }}>
+                      <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem', fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                         <div style={{ width: '6px', height: '6px', backgroundColor: '#ea580c', borderRadius: '50%' }}></div>
                         {point}
                       </li>
@@ -793,16 +793,16 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
 
         {/* Ninth Section: Benefits of Filing */}
         {service.visibility?.overview !== false && (
-          <div style={{ backgroundColor: '#fcfaf4', padding: '5rem 1rem' }}>
+          <div style={{ backgroundColor: 'var(--bg-pastel-3)', padding: '5rem 1rem' }}>
           <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '1.5rem', letterSpacing: '-0.02em' }}>
               Benefits of {service.name || 'Services'} with NetProfit
             </h2>
-            <p style={{ color: '#4b5563', fontSize: '1.05rem', marginBottom: '2rem' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', marginBottom: '2rem' }}>
               NetProfit makes compliance simple, accurate, and effortless.
             </p>
 
-            <ul style={{ listStyleType: 'none', padding: 0, margin: '0 0 2.5rem 0', color: '#4b5563' }}>
+            <ul style={{ listStyleType: 'none', padding: 0, margin: '0 0 2.5rem 0', color: 'var(--text-muted)' }}>
               {((service.benefits && service.benefits.length > 0) ? service.benefits : [
                 { title: 'Dedicated Expert', desc: 'A personal consultant handles your filings end to end.' },
                 { title: 'Smart Alerts', desc: 'Automated reminders so you never miss a due date.' },
@@ -813,13 +813,13 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                 <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.75rem', lineHeight: '1.6' }}>
                   <div style={{ marginTop: '0.3rem', width: '6px', height: '6px', backgroundColor: '#ea580c', borderRadius: '50%', flexShrink: 0 }}></div>
                   <div>
-                    <strong style={{ color: '#111827' }}>{benefit.title}</strong> – {benefit.desc}
+                    <strong style={{ color: 'var(--text-color)' }}>{benefit.title}</strong> – {benefit.desc}
                   </div>
                 </li>
               ))}
             </ul>
 
-            <p style={{ color: '#4b5563', fontSize: '1.05rem', margin: 0 }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', margin: 0 }}>
               Stay compliant effortlessly while focusing on your business growth.
             </p>
           </div>
@@ -828,15 +828,15 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
 
         {/* Tenth Section: Documents Required */}
         {service.documentsRequired && service.documentsRequired.length > 0 && (
-          <div style={{ backgroundColor: '#f6f5ed', padding: '5rem 1rem', overflow: 'hidden' }}>
+          <div style={{ backgroundColor: 'var(--bg-pastel-4)', padding: '5rem 1rem', overflow: 'hidden' }}>
             <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4rem' }}>
 
               {/* Left Side: Content */}
               <div style={{ flex: '1 1 500px' }}>
-                <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#111827', marginBottom: '1rem', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
+                <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '1rem', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
                   Documents Required for<br />{service.name || 'Services'}
                 </h2>
-                <p style={{ color: '#111827', fontSize: '1.05rem', fontWeight: 700, marginBottom: '2rem' }}>
+                <p style={{ color: 'var(--text-color)', fontSize: '1.05rem', fontWeight: 700, marginBottom: '2rem' }}>
                   Keep these documents ready for smooth processing:
                 </p>
 
@@ -849,7 +849,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                         <div style={{ width: '32px', height: '32px', backgroundColor: 'var(--card-bg)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         </div>
-                        <span style={{ fontSize: '0.95rem', color: '#374151', fontWeight: 500 }}>{doc}</span>
+                        <span style={{ fontSize: '0.95rem', color: 'var(--text-muted)', fontWeight: 500 }}>{doc}</span>
                       </div>
                     ))}
                 </div>
@@ -885,9 +885,9 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
 
         {/* Eleventh Section: Client Reviews */}
         {service.showReviews !== false && service.visibility?.reviews !== false && (
-          <div style={{ backgroundColor: '#e6f4e8', padding: '5rem 1rem', overflow: 'hidden', position: 'relative' }}>
+          <div style={{ backgroundColor: 'var(--bg-pastel-5)', padding: '5rem 1rem', overflow: 'hidden', position: 'relative' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-              <h2 style={{ textAlign: 'center', fontSize: '2.25rem', fontWeight: 800, color: '#111827', marginBottom: '3rem', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
+              <h2 style={{ textAlign: 'center', fontSize: '2.25rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '3rem', letterSpacing: '-0.02em', lineHeight: '1.2' }}>
                 Hear What Our Clients Say About<br />NetProfit
               </h2>
 
@@ -903,19 +903,19 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                         {review.name.charAt(0)}
                       </div>
                       <div>
-                        <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#111827', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-color)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                           {review.name}
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="#ea580c"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" /></svg>
                         </h4>
-                        <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>{review.type} • {review.date}</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{review.type} • {review.date}</span>
                       </div>
                     </div>
-                    <p style={{ color: '#4b5563', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '1.5rem' }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '1.5rem' }}>
                       {review.text}
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="#ea4335"><path d="M21.35,11.1H12.18V13.83H18.69C18.36,17.64 15.19,19.27 12.19,19.27C8.36,19.27 5,16.25 5,12C5,7.9 8.2,4.73 12.2,4.73C15.29,4.73 17.1,6.7 17.1,6.7L19,4.72C19,4.72 16.56,2 12.1,2C6.42,2 2.03,6.8 2.03,12C2.03,17.05 6.16,22 12.25,22C17.6,22 21.5,18.33 21.5,12.91C21.5,11.76 21.35,11.1 21.35,11.1V11.1Z" /></svg>
-                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#374151' }}>Google Reviews</span>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Google Reviews</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.25rem' }}>
                       <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fbbf24', marginRight: '0.25rem' }}>{review.rating}</span>
@@ -962,8 +962,8 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                 const theme = colors[idx % colors.length];
                 return (
                   <div key={idx} style={{
-                    background: 'linear-gradient(180deg, #f0fdf4 0%, #ffffff 35%)',
-                    border: '1px solid #f1f5f9',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--card-border)',
                     borderRadius: '12px',
                     padding: '2.5rem 1.5rem',
                     textAlign: 'center',
@@ -1002,14 +1002,14 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                 .custom-section-content {
                   font-size: 1.15rem;
                   line-height: 1.8;
-                  color: #334155;
+                  color: var(--text-muted);
                 }
                 .custom-section-content p {
                   margin-bottom: 1.75rem;
                 }
                 .custom-section-content h3 {
                   font-size: 1.75rem;
-                  color: #0f172a;
+                  color: var(--text-color);
                   margin-top: 3rem;
                   margin-bottom: 1.25rem;
                   font-weight: 800;
@@ -1017,7 +1017,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                 }
                 .custom-section-content h4 {
                   font-size: 1.35rem;
-                  color: #1e293b;
+                  color: var(--text-color);
                   margin-top: 2rem;
                   margin-bottom: 1rem;
                   font-weight: 700;
@@ -1052,14 +1052,14 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                 }
                 .custom-section-content strong {
                   font-weight: 700;
-                  color: #0f172a;
+                  color: var(--text-color);
                 }
               `}} />
               {service.customSections.map((section, idx) => (
                 <section key={idx} ref={idx === 0 ? customRef : null} style={{ backgroundColor: idx % 2 === 0 ? 'var(--bg-color)' : 'white', padding: '5rem 0', scrollMarginTop: '60px' }}>
                   <div style={{ maxWidth: '900px', margin: '0 auto', padding: '0 1.5rem' }}>
                     <h2 style={{ fontSize: '2.5rem', marginBottom: '2.5rem', color: 'var(--text-color)', fontWeight: 900, letterSpacing: '-0.02em', borderBottom: '2px solid #e2e8f0', paddingBottom: '1rem' }}>{section.title}</h2>
-                    <div className="custom-section-content" dangerouslySetInnerHTML={{ __html: section.content }} />
+                    <div className="custom-section-content" dangerouslySetInnerHTML={{ __html: section.content ? section.content.replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, '<h2$1>$2</h2>') : '' }} />
                   </div>
                 </section>
               ))}
@@ -1098,7 +1098,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                       <div key={idx} style={{ marginBottom: '2.5rem' }}>
                         <div
                           className="rich-text-content modern-bullets"
-                          dangerouslySetInnerHTML={{ __html: section.replace(/http:\/\//gi, 'https://') }}
+                          dangerouslySetInnerHTML={{ __html: section ? section.replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, '<h2$1>$2</h2>').replace(/http:\/\//gi, 'https://') : '' }}
                         />
                       </div>
                     );
@@ -1139,7 +1139,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
                   { question: `What documents are required for ${service.name}?`, answer: `Typically, you need PAN, Aadhar, proof of business registration, identity and address proofs, and bank account details.` },
                   { question: `What happens if I don't comply with ${service.name} regulations?`, answer: `Non-compliance or late filing attracts penalties and legal consequences, which vary depending on the specific compliance requirements.` }
                 ]).map((faq, idx) => (
-                  <div key={idx} style={{ backgroundColor: 'var(--card-bg)', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                  <div key={idx} style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
                     <button
                       onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
                       style={{ width: '100%', padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left' }}
@@ -1169,9 +1169,9 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
           align-items: center;
         }
         .hero-form-card {
-          background-color: white;
+          background: var(--card-bg);
           border-radius: 16px;
-          border: 1px solid #e2e8f0;
+          border: 1px solid var(--card-border);
           box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
           overflow: hidden;
         }
@@ -1229,7 +1229,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
           position: relative;
           padding-left: 2rem;
           margin-bottom: 1rem;
-          color: #334155;
+          color: var(--text-muted);
           line-height: 1.7;
           font-size: 1.15rem;
         }
@@ -1244,7 +1244,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
           border-radius: 50%;
         }
         .modern-bullets h2 {
-          color: #0f172a;
+          color: var(--text-color);
           margin-top: 2rem;
           margin-bottom: 1.25rem;
           font-weight: 800;
@@ -1252,7 +1252,7 @@ export default function ServiceDetails({ initialService = null, initialComboDeta
           letter-spacing: -0.02em;
         }
         .modern-bullets h3 {
-          color: #1e293b;
+          color: var(--text-color);
           margin-top: 1.75rem;
           margin-bottom: 1rem;
           font-weight: 700;

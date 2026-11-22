@@ -1,6 +1,7 @@
 "use client";
 
 import styles from "../page.module.css";
+import Loader from "../../../components/Loader";
 import React, { useEffect, useState } from "react";
 import { db } from "../../../lib/firebase";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
@@ -69,7 +70,11 @@ export default function AdminDashboard() {
   };
 
   if (loading) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading dashboard...</div>;
+    return (
+      <div style={{ display: 'flex', minHeight: '50vh', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader text="Loading dashboard..." />
+      </div>
+    );
   }
 
   return (

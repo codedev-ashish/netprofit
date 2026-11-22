@@ -9,6 +9,25 @@ import styles from "./page.module.css";
 import { IPOData, IPOStatus } from "../../admin/ipos/types";
 import ShareButtons from "../../../components/ShareButtons";
 
+const FAQItem = ({ faq }: { faq: { question: string; answer: string } }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className={styles.faqItem} onClick={() => setIsOpen(!isOpen)}>
+      <div className={styles.faqHeader}>
+        <h3 className={styles.faqQuestion}>{faq.question}</h3>
+        <span className={`${styles.faqIcon} ${isOpen ? styles.open : ""}`}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </span>
+      </div>
+      <div className={`${styles.faqAnswerWrapper} ${isOpen ? styles.open : ""}`}>
+        <div className={styles.faqAnswerInner}>
+          <div className={`${styles.faqAnswerContent} rich-text-content`} dangerouslySetInnerHTML={{ __html: faq.answer.replace(/\n/g, '<br/>') }} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const formatToDDMMMYYYY = (dateStr?: string) => {
   if (!dateStr || dateStr === "TBA") return "TBA";
   try {
@@ -212,9 +231,10 @@ export default function IPODetailsClient({ initialData = null }: { initialData?:
     if (field.type === 'url') {
       return <a href={field.value} target="_blank" rel="noopener noreferrer" className="text-link">Link</a>;
     }
-    if (field.type === 'text' || !field.type) {
+    if (field.type === 'text' || field.type === 'textarea' || !field.type) {
       const secureValue = typeof field.value === 'string' ? field.value.replace(/http:\/\//gi, 'https://') : field.value;
-      return <div className="rich-text-content" dangerouslySetInnerHTML={{ __html: secureValue }} />;
+      const finalValue = typeof secureValue === 'string' ? secureValue.replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, '<h2$1>$2</h2>') : secureValue;
+      return <div className="rich-text-content" dangerouslySetInnerHTML={{ __html: finalValue }} />;
     }
     return field.value;
   };
@@ -264,76 +284,99 @@ export default function IPODetailsClient({ initialData = null }: { initialData?:
       <div className={styles.contentWrapper}>
         <div className={styles.mainColumn}>
           
-          <div className={styles.sectionCard}>
-            <h2 className={styles.sectionTitle}>Issue Details</h2>
-            <div className={styles.detailGrid}>
-              {shouldDisplayField(displayOpenDate) && (
-              <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>Open Date</span>
-                <span className={styles.detailValue}>{formatToDDMMMYYYY(displayOpenDate)}</span>
-              </div>)}
-              {shouldDisplayField(displayCloseDate) && (
-              <div className={styles.detailItem}>
-                <span className={styles.detailLabel}>Close Date</span>
-                <span className={styles.detailValue}>{formatToDDMMMYYYY(displayCloseDate)}</span>
-              </div>)}
-                {ipo.issueDetailsFields ? (
-                  ipo.issueDetailsFields.filter(f => shouldDisplayField(f.value)).map(field => (
-                    <div className={styles.detailItem} key={field.id}>
-                      <span className={styles.detailLabel}>{field.label}</span>
-                      <span className={styles.detailValue}>{formatDynamicValue(field.value, field.label)}</span>
-                    </div>
-                  ))
-                ) : (
-                <>
-                  {shouldDisplayField(ipo.priceBandLow) || shouldDisplayField(ipo.priceBandHigh) ? (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Price Band</span>
-                    <span className={styles.detailValue}>₹{ipo.priceBandLow} - ₹{ipo.priceBandHigh}</span>
-                  </div>) : null}
-                  {shouldDisplayField(ipo.lotSize) ? (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Lot Size</span>
-                    <span className={styles.detailValue}>{ipo.lotSize} Shares</span>
-                  </div>) : null}
-                  {shouldDisplayField(ipo.issueSize) ? (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Issue Size</span>
-                    <span className={styles.detailValue}>₹{ipo.issueSize} Cr</span>
-                  </div>) : null}
-                  {shouldDisplayField(ipo.faceValue) ? (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Face Value</span>
-                    <span className={styles.detailValue}>₹{ipo.faceValue}</span>
-                  </div>) : null}
-                  {shouldDisplayField(ipo.freshIssueSize) ? (
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Fresh Issue</span>
-                      <span className={styles.detailValue}>₹{ipo.freshIssueSize} Cr</span>
-                    </div>
-                  ) : null}
-                  {shouldDisplayField(ipo.offerForSaleSize) ? (
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Offer for Sale</span>
-                      <span className={styles.detailValue}>₹{ipo.offerForSaleSize} Cr</span>
-                    </div>
-                  ) : null}
-                </>
-              )}
-              {shouldDisplayField(ipo.listedPrice) && (!ipo.issueDetailsFields || !ipo.issueDetailsFields.some((f: any) => f.label.toLowerCase().includes('listed price'))) ? (
-                <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Listed Price</span>
-                  <span className={styles.detailValue}>₹{ipo.listedPrice}</span>
-                </div>
-              ) : null}
-              {renderCustomFieldsAsGrid('general')}
-            </div>
-          </div>
+          {(() => {
+            const hasCustomGeneral = ipo.customTabs?.find(t => t.id === 'general')?.fields?.some(f => shouldDisplayField(f.value));
+            const hasIssueDetailsFields = ipo.issueDetailsFields && ipo.issueDetailsFields.some(f => shouldDisplayField(f.value));
+            const hasLegacyIssueDetails = shouldDisplayField(displayOpenDate) || shouldDisplayField(displayCloseDate) || shouldDisplayField(ipo.priceBandHigh) || shouldDisplayField(ipo.priceBandLow) || shouldDisplayField(ipo.lotSize) || shouldDisplayField(ipo.issueSize) || shouldDisplayField(ipo.faceValue) || shouldDisplayField(ipo.freshIssueSize) || shouldDisplayField(ipo.offerForSaleSize);
+            const hasListedPrice = shouldDisplayField(ipo.listedPrice) && (!ipo.issueDetailsFields || !ipo.issueDetailsFields.some((f: any) => f.label.toLowerCase().includes('listed price')));
 
-          {(ipo.subscriptionFields || ipo.quotaFields || ipo.subscriptionStatus || ipo.quota) && (
-            <div className={styles.sectionCard}>
-              <h2 className={styles.sectionTitle}>Subscription & Quota</h2>
-              <div className={styles.detailGrid}>
+            if (!hasCustomGeneral && !hasIssueDetailsFields && !hasLegacyIssueDetails && !hasListedPrice) return null;
+
+            return (
+              <div className={styles.sectionCard}>
+                <h2 className={styles.sectionTitle}>Issue Details</h2>
+                <div className={styles.detailGrid}>
+                  {shouldDisplayField(displayOpenDate) && (
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Open Date</span>
+                    <span className={styles.detailValue}>{formatToDDMMMYYYY(displayOpenDate)}</span>
+                  </div>)}
+                  {shouldDisplayField(displayCloseDate) && (
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Close Date</span>
+                    <span className={styles.detailValue}>{formatToDDMMMYYYY(displayCloseDate)}</span>
+                  </div>)}
+                  
+                  {ipo.issueDetailsFields ? (
+                    ipo.issueDetailsFields.filter(f => shouldDisplayField(f.value)).map(field => (
+                      <div className={styles.detailItem} key={field.id}>
+                        <span className={styles.detailLabel}>{field.label}</span>
+                        <span className={styles.detailValue}>{formatDynamicValue(field.value, field.label)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      {shouldDisplayField(ipo.priceBandLow) || shouldDisplayField(ipo.priceBandHigh) ? (
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Price Band</span>
+                        <span className={styles.detailValue}>
+                          {ipo.priceBandLow && ipo.priceBandLow !== ipo.priceBandHigh ? `₹${ipo.priceBandLow} - ₹${ipo.priceBandHigh}` : `₹${ipo.priceBandHigh}`}
+                        </span>
+                      </div>) : null}
+                      {shouldDisplayField(ipo.lotSize) ? (
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Min Lot Size</span>
+                        <span className={styles.detailValue}>{ipo.lotSize} shares</span>
+                      </div>) : null}
+                      {shouldDisplayField(ipo.issueSize) ? (
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Issue Size</span>
+                        <span className={styles.detailValue}>₹{ipo.issueSize} Cr</span>
+                      </div>) : null}
+                      {shouldDisplayField(ipo.faceValue) ? (
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Face Value</span>
+                        <span className={styles.detailValue}>₹{ipo.faceValue}</span>
+                      </div>) : null}
+                      {shouldDisplayField(ipo.freshIssueSize) ? (
+                        <div className={styles.detailItem}>
+                          <span className={styles.detailLabel}>Fresh Issue</span>
+                          <span className={styles.detailValue}>₹{ipo.freshIssueSize} Cr</span>
+                        </div>
+                      ) : null}
+                      {shouldDisplayField(ipo.offerForSaleSize) ? (
+                        <div className={styles.detailItem}>
+                          <span className={styles.detailLabel}>Offer for Sale</span>
+                          <span className={styles.detailValue}>₹{ipo.offerForSaleSize} Cr</span>
+                        </div>
+                      ) : null}
+                    </>
+                  )}
+                  {hasListedPrice ? (
+                    <div className={styles.detailItem}>
+                      <span className={styles.detailLabel}>Listed Price</span>
+                      <span className={styles.detailValue}>₹{ipo.listedPrice}</span>
+                    </div>
+                  ) : null}
+                  {renderCustomFieldsAsGrid('general')}
+                </div>
+              </div>
+            );
+          })()}
+
+          {(() => {
+            const hasCustomSub = ipo.customTabs?.find(t => t.id === 'subscription')?.fields?.some(f => shouldDisplayField(f.value));
+            const hasSubFields = ipo.subscriptionFields && ipo.subscriptionFields.some(f => shouldDisplayField(f.value));
+            const hasLegacySub = ipo.subscriptionStatus && (shouldDisplayField(ipo.subscriptionStatus.qib) || shouldDisplayField(ipo.subscriptionStatus.nii) || shouldDisplayField(ipo.subscriptionStatus.retail) || shouldDisplayField(ipo.subscriptionStatus.total));
+            const hasQuotaFields = ipo.quotaFields && ipo.quotaFields.some(f => shouldDisplayField(f.value));
+            const hasLegacyQuota = ipo.quota && (shouldDisplayField(ipo.quota.qib) || shouldDisplayField(ipo.quota.nii) || shouldDisplayField(ipo.quota.retail));
+            
+            if (!hasCustomSub && !hasSubFields && !hasLegacySub && !hasQuotaFields && !hasLegacyQuota) return null;
+
+            return (
+              <div className={styles.sectionCard}>
+                <h2 className={styles.sectionTitle}>Subscription & Quota</h2>
+                <div className={styles.detailGrid}>
                 {ipo.subscriptionFields ? (
                   ipo.subscriptionFields.filter(f => shouldDisplayField(f.value)).map(field => (
                     <div className={styles.detailItem} key={field.id}>
@@ -394,247 +437,336 @@ export default function IPODetailsClient({ initialData = null }: { initialData?:
                 ) : null}
               </div>
             </div>
-          )}
+            );
+          })()}
 
-          <div className={styles.sectionCard}>
-            <h2 className={styles.sectionTitle}>IPO Timeline</h2>
-            <div className={styles.timelineContainer}>
-            {ipo.timelineFields ? (
-              ipo.timelineFields.filter(f => shouldDisplayField(f.value)).map(field => (
-                <div className={styles.timelineItem} key={field.id}>
-                  <span className={styles.timelineLabel}>{field.label}</span>
-                  <span className={styles.timelineDate}>{formatDynamicValue(field.value, field.label, false, false, true)}</span>
-                </div>
-              ))
-            ) : ipo.timeline ? (
-              <>
-                {shouldDisplayField(ipo.timeline?.openDate || ipo.openDate) && (
-                <div className={styles.timelineItem}>
-                  <span className={styles.timelineLabel}>Issue Opens</span>
-                  <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.openDate || ipo.openDate)}</span>
-                </div>)}
-                {shouldDisplayField(ipo.timeline?.closeDate || ipo.closeDate) && (
-                <div className={styles.timelineItem}>
-                  <span className={styles.timelineLabel}>Issue Closes</span>
-                  <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.closeDate || ipo.closeDate)}</span>
-                </div>)}
-                {shouldDisplayField(ipo.timeline?.basisOfAllotment) && (
-                <div className={styles.timelineItem}>
-                  <span className={styles.timelineLabel}>Basis of Allotment</span>
-                  <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.basisOfAllotment)}</span>
-                </div>)}
-                {shouldDisplayField(ipo.timeline?.initiationOfRefunds) && (
-                <div className={styles.timelineItem}>
-                  <span className={styles.timelineLabel}>Initiation of Refunds</span>
-                  <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.initiationOfRefunds)}</span>
-                </div>)}
-                {shouldDisplayField(ipo.timeline?.creditOfShares) && (
-                <div className={styles.timelineItem}>
-                  <span className={styles.timelineLabel}>Credit of Shares</span>
-                  <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.creditOfShares)}</span>
-                </div>)}
-                {shouldDisplayField(ipo.timeline?.listingDate || ipo.listingDate) && (
-                <div className={styles.timelineItem}>
-                  <span className={styles.timelineLabel}>Listing Date</span>
-                  <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.listingDate || ipo.listingDate)}</span>
-                </div>)}
-              </>
-            ) : null}
-            {renderCustomFieldsAsTimeline('timeline')}
-            </div>
-          </div>
-
-          <div className={styles.sectionCard}>
-            <h2 className={styles.sectionTitle}>Company Financials</h2>
-            <div className={styles.detailGrid}>
-              {ipo.valuationFields ? (
-                ipo.valuationFields.filter(f => shouldDisplayField(f.value)).map(field => (
-                  <div className={styles.detailItem} key={field.id}>
-                    <span className={styles.detailLabel}>{field.label}</span>
-                    <span className={styles.detailValue}>{formatDynamicValue(field.value, field.label)}</span>
-                  </div>
-                ))
-              ) : (
-                <>
-                  {shouldDisplayField(ipo.valuation?.eps) && (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>EPS</span>
-                    <span className={styles.detailValue}>₹{ipo.valuation?.eps}</span>
-                  </div>)}
-                  {shouldDisplayField(ipo.valuation?.pe) && (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>P/E Ratio</span>
-                    <span className={styles.detailValue}>{ipo.valuation?.pe}</span>
-                  </div>)}
-                  {shouldDisplayField(ipo.valuation?.industryPe) && (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Industry P/E</span>
-                    <span className={styles.detailValue}>{ipo.valuation?.industryPe}</span>
-                  </div>)}
-                  {shouldDisplayField(ipo.valuation?.marketCap) && (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>Market Cap</span>
-                    <span className={styles.detailValue}>₹{ipo.valuation?.marketCap} Cr</span>
-                  </div>)}
-                  {shouldDisplayField(ipo.valuation?.ronw) && (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>RONW (%)</span>
-                    <span className={styles.detailValue}>{ipo.valuation?.ronw}%</span>
-                  </div>)}
-                  {shouldDisplayField(ipo.valuation?.nav) && (
-                  <div className={styles.detailItem}>
-                    <span className={styles.detailLabel}>NAV</span>
-                    <span className={styles.detailValue}>₹{ipo.valuation?.nav}</span>
-                  </div>)}
-                </>
-              )}
-              {renderCustomFieldsAsGrid('price')}
-            </div>
-
-            {ipo.financialTable && ipo.financialTable.rows.length > 0 ? (
-              <div style={{ marginTop: '2rem', overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', color: 'var(--text-color)' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--bg-secondary)', textAlign: 'left' }}>
-                      {ipo.financialTable.columns.map(col => (
-                        <th key={col.id} style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>{col.label}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ipo.financialTable.rows.map(row => (
-                      <tr key={row.id}>
-                        {ipo.financialTable!.columns.map(col => (
-                          <td key={col.id} style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>
-                            {row.values[col.id] || "-"}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              ipo.financials && ipo.financials.length > 0 && (
-                <div style={{ marginTop: '2rem', overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', color: 'var(--text-color)' }}>
-                    <thead>
-                      <tr style={{ background: 'var(--bg-secondary)', textAlign: 'left' }}>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>Year</th>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>Revenue</th>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>Expense</th>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>Profit</th>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>Assets</th>
-                        <th style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>Net Worth</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ipo.financials.map((fy, idx) => (
-                        <tr key={idx}>
-                          <td style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>{fy.year}</td>
-                          <td style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>₹{fy.revenue} Cr</td>
-                          <td style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>₹{fy.expense} Cr</td>
-                          <td style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>₹{fy.profit} Cr</td>
-                          <td style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>₹{fy.assets} Cr</td>
-                          <td style={{ padding: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>₹{fy.netWorth} Cr</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )
-            )}
+          {(() => {
+            const hasCustomTimeline = ipo.customTabs?.find(t => t.id === 'timeline')?.fields?.some(f => shouldDisplayField(f.value));
+            const hasDynamicTimeline = ipo.timelineFields && ipo.timelineFields.some(f => shouldDisplayField(f.value));
+            const hasLegacyTimeline = ipo.timeline && (shouldDisplayField(ipo.timeline.openDate) || shouldDisplayField(ipo.timeline.closeDate) || shouldDisplayField(ipo.timeline.basisOfAllotment) || shouldDisplayField(ipo.timeline.initiationOfRefunds) || shouldDisplayField(ipo.timeline.creditOfShares) || shouldDisplayField(ipo.timeline.listingDate));
+            const hasFallbackTimeline = shouldDisplayField(ipo.openDate) || shouldDisplayField(ipo.closeDate) || shouldDisplayField(ipo.listingDate);
             
-            <div className={styles.detailGrid} style={{ marginTop: '1.5rem' }}>
-              {renderCustomFieldsAsGrid('financials')}
-            </div>
-          </div>
+            if (!hasCustomTimeline && !hasDynamicTimeline && !hasLegacyTimeline && !hasFallbackTimeline) return null;
 
-          <div className={styles.sectionCard}>
-            <h2 className={styles.sectionTitle}>About the Company</h2>
-            <div style={{ lineHeight: 1.6, color: "var(--text-color)", overflowWrap: 'break-word', wordWrap: 'break-word', whiteSpace: 'normal' }} className="rich-text-content">
-              {ipo.description ? (
-                <div dangerouslySetInnerHTML={{ __html: ipo.description.replace(/&nbsp;|\u00A0/g, ' ').replace(/http:\/\//gi, 'https://') }} />
-              ) : (
-                <p>Company description is not available yet.</p>
+            return (
+              <div className={styles.sectionCard}>
+                <h2 className={styles.sectionTitle}>IPO Timeline</h2>
+                <div className={styles.timelineContainer}>
+                {ipo.timelineFields ? (
+                  ipo.timelineFields.filter(f => shouldDisplayField(f.value)).map(field => (
+                    <div className={styles.timelineItem} key={field.id}>
+                      <span className={styles.timelineLabel}>{field.label}</span>
+                      <span className={styles.timelineDate}>{formatDynamicValue(field.value, field.label, false, false, true)}</span>
+                    </div>
+                  ))
+                ) : ipo.timeline ? (
+                  <>
+                    {shouldDisplayField(ipo.timeline?.openDate || ipo.openDate) && (
+                    <div className={styles.timelineItem}>
+                      <span className={styles.timelineLabel}>Issue Opens</span>
+                      <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.openDate || ipo.openDate)}</span>
+                    </div>)}
+                    {shouldDisplayField(ipo.timeline?.closeDate || ipo.closeDate) && (
+                    <div className={styles.timelineItem}>
+                      <span className={styles.timelineLabel}>Issue Closes</span>
+                      <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.closeDate || ipo.closeDate)}</span>
+                    </div>)}
+                    {shouldDisplayField(ipo.timeline?.basisOfAllotment) && (
+                    <div className={styles.timelineItem}>
+                      <span className={styles.timelineLabel}>Basis of Allotment</span>
+                      <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.basisOfAllotment)}</span>
+                    </div>)}
+                    {shouldDisplayField(ipo.timeline?.initiationOfRefunds) && (
+                    <div className={styles.timelineItem}>
+                      <span className={styles.timelineLabel}>Initiation of Refunds</span>
+                      <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.initiationOfRefunds)}</span>
+                    </div>)}
+                    {shouldDisplayField(ipo.timeline?.creditOfShares) && (
+                    <div className={styles.timelineItem}>
+                      <span className={styles.timelineLabel}>Credit of Shares</span>
+                      <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.creditOfShares)}</span>
+                    </div>)}
+                    {shouldDisplayField(ipo.timeline?.listingDate || ipo.listingDate) && (
+                    <div className={styles.timelineItem}>
+                      <span className={styles.timelineLabel}>Listing Date</span>
+                      <span className={styles.timelineDate}>{formatToDDMMMYYYY(ipo.timeline?.listingDate || ipo.listingDate)}</span>
+                    </div>)}
+                  </>
+                ) : null}
+                {renderCustomFieldsAsTimeline('timeline')}
+                </div>
+              </div>
+            );
+          })()}
+
+          {(() => {
+            const hasCustomFinancials = ipo.customTabs?.find(t => t.id === 'financials')?.fields?.some(f => shouldDisplayField(f.value));
+            const hasCustomPrice = ipo.customTabs?.find(t => t.id === 'price')?.fields?.some(f => shouldDisplayField(f.value));
+            const hasValuationFields = ipo.valuationFields && ipo.valuationFields.some(f => shouldDisplayField(f.value));
+            const hasLegacyValuation = ipo.valuation && (shouldDisplayField(ipo.valuation.eps) || shouldDisplayField(ipo.valuation.pe) || shouldDisplayField(ipo.valuation.industryPe) || shouldDisplayField(ipo.valuation.marketCap) || shouldDisplayField(ipo.valuation.ronw) || shouldDisplayField(ipo.valuation.nav));
+            const hasFinancialTable = ipo.financialTable && ipo.financialTable.rows.length > 0;
+            const hasLegacyFinancials = ipo.financials && ipo.financials.length > 0;
+            
+            if (!hasCustomFinancials && !hasCustomPrice && !hasValuationFields && !hasLegacyValuation && !hasFinancialTable && !hasLegacyFinancials) return null;
+
+            return (
+              <div className={styles.sectionCard}>
+                <h2 className={styles.sectionTitle}>Company Financials</h2>
+                <div className={styles.detailGrid}>
+                  {ipo.valuationFields ? (
+                    ipo.valuationFields.filter(f => shouldDisplayField(f.value)).map(field => (
+                      <div className={styles.detailItem} key={field.id}>
+                        <span className={styles.detailLabel}>{field.label}</span>
+                        <span className={styles.detailValue}>{formatDynamicValue(field.value, field.label)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      {shouldDisplayField(ipo.valuation?.eps) && (
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>EPS</span>
+                        <span className={styles.detailValue}>₹{ipo.valuation?.eps}</span>
+                      </div>)}
+                      {shouldDisplayField(ipo.valuation?.pe) && (
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>P/E Ratio</span>
+                        <span className={styles.detailValue}>{ipo.valuation?.pe}</span>
+                      </div>)}
+                      {shouldDisplayField(ipo.valuation?.industryPe) && (
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Industry P/E</span>
+                        <span className={styles.detailValue}>{ipo.valuation?.industryPe}</span>
+                      </div>)}
+                      {shouldDisplayField(ipo.valuation?.marketCap) && (
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>Market Cap</span>
+                        <span className={styles.detailValue}>₹{ipo.valuation?.marketCap} Cr</span>
+                      </div>)}
+                      {shouldDisplayField(ipo.valuation?.ronw) && (
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>RONW (%)</span>
+                        <span className={styles.detailValue}>{ipo.valuation?.ronw}%</span>
+                      </div>)}
+                      {shouldDisplayField(ipo.valuation?.nav) && (
+                      <div className={styles.detailItem}>
+                        <span className={styles.detailLabel}>NAV</span>
+                        <span className={styles.detailValue}>₹{ipo.valuation?.nav}</span>
+                      </div>)}
+                    </>
+                  )}
+                  {renderCustomFieldsAsGrid('price')}
+                </div>
+
+                {ipo.financialTable && ipo.financialTable.rows.length > 0 ? (
+                  <div style={{ marginTop: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.5rem' }}>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', color: 'var(--text-color)' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                            <th style={{ padding: '0.75rem', fontWeight: 600 }}>Period Ended</th>
+                            {ipo.financialTable.rows.map(row => (
+                              <th key={row.id} style={{ padding: '0.75rem', fontWeight: 600 }}>{row.values['year'] || "-"}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ipo.financialTable.columns.filter(col => col.id !== 'year').map((col, index) => (
+                            <tr key={col.id} style={{ background: index % 2 === 0 ? 'var(--bg-secondary)' : 'transparent' }}>
+                              <td style={{ padding: '0.75rem', color: '#3b82f6' }}>{col.label.replace(' (Cr)', '')}</td>
+                              {ipo.financialTable!.rows.map(row => (
+                                <td key={`${col.id}_${row.id}`} style={{ padding: '0.75rem' }}>
+                                  {row.values[col.id] || "-"}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div style={{ textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
+                      Amount in ₹ Crore
+                    </div>
+                  </div>
+                ) : (
+                  ipo.financials && ipo.financials.length > 0 && (
+                    <div style={{ marginTop: '1.5rem', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1.5rem' }}>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', color: 'var(--text-color)' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
+                              <th style={{ padding: '0.75rem', fontWeight: 600 }}>Period Ended</th>
+                              {ipo.financials.map((fy, idx) => (
+                                <th key={`head_${idx}`} style={{ padding: '0.75rem', fontWeight: 600 }}>{fy.year || "-"}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {['revenue', 'expense', 'profit', 'assets', 'netWorth'].map((field, index) => {
+                              const labels: Record<string, string> = {
+                                revenue: 'Revenue',
+                                expense: 'Expense',
+                                profit: 'Profit After Tax',
+                                assets: 'Assets',
+                                netWorth: 'Net Worth'
+                              };
+                              return (
+                                <tr key={field} style={{ background: index % 2 === 0 ? 'var(--bg-secondary)' : 'transparent' }}>
+                                  <td style={{ padding: '0.75rem', color: '#3b82f6' }}>{labels[field]}</td>
+                                  {ipo.financials!.map((fy: any, idx: number) => (
+                                    <td key={`cell_${field}_${idx}`} style={{ padding: '0.75rem' }}>
+                                      {fy[field] || "-"}
+                                    </td>
+                                  ))}
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div style={{ textAlign: 'right', fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '1rem' }}>
+                        Amount in ₹ Crore
+                      </div>
+                    </div>
+                  )
+                )}
+                
+                <div className={styles.detailGrid} style={{ marginTop: '1.5rem' }}>
+                  {renderCustomFieldsAsGrid('financials')}
+                </div>
+              </div>
+            );
+          })()}
+
+          {(ipo.description || (ipo.objectsOfTheIssue && ipo.objectsOfTheIssue.length > 0) || (ipo.promoters && ipo.promoters.length > 0)) && (
+            <div className={styles.sectionCard}>
+              <h2 className={styles.sectionTitle}>About the Company</h2>
+              
+              {ipo.description && (
+                <div style={{ lineHeight: 1.6, color: "var(--text-color)", overflowWrap: 'break-word', wordWrap: 'break-word', whiteSpace: 'normal', marginBottom: '1.5rem' }} className="rich-text-content">
+                  <div dangerouslySetInnerHTML={{ __html: ipo.description.replace(/&nbsp;|\u00A0/g, ' ').replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, '<h2$1>$2</h2>').replace(/http:\/\//gi, 'https://') }} />
+                </div>
+              )}
+              
+              {ipo.objectsOfTheIssue && ipo.objectsOfTheIssue.length > 0 && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-color)' }}>Objects of the Issue</h3>
+                  <ul style={{ paddingLeft: '1.5rem', color: "var(--text-color)", lineHeight: 1.6 }}>
+                    {ipo.objectsOfTheIssue.map((obj, i) => <li key={i}>{obj}</li>)}
+                  </ul>
+                </div>
+              )}
+              
+              {ipo.promoters && ipo.promoters.length > 0 && (
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-color)' }}>Promoters</h3>
+                  <p style={{ color: "var(--text-color)", lineHeight: 1.6 }}>{ipo.promoters.join(', ')}</p>
+                  {ipo.promoterHolding && (
+                    <div style={{ display: 'flex', gap: '2rem', marginTop: '0.5rem', color: 'var(--text-color)' }}>
+                      <span><strong>Pre Issue Holding:</strong> {ipo.promoterHolding.preIssue}%</span>
+                      <span><strong>Post Issue Holding:</strong> {ipo.promoterHolding.postIssue}%</span>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-            {ipo.objectsOfTheIssue && ipo.objectsOfTheIssue.length > 0 && (
-              <div style={{ marginTop: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-color)' }}>Objects of the Issue</h3>
-                <ul style={{ paddingLeft: '1.5rem', color: "var(--text-color)", lineHeight: 1.6 }}>
-                  {ipo.objectsOfTheIssue.map((obj, i) => <li key={i}>{obj}</li>)}
-                </ul>
-              </div>
-            )}
-            {ipo.promoters && ipo.promoters.length > 0 && (
-              <div style={{ marginTop: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-color)' }}>Promoters</h3>
-                <p style={{ color: "var(--text-color)", lineHeight: 1.6 }}>{ipo.promoters.join(', ')}</p>
-                {ipo.promoterHolding && (
-                  <div style={{ display: 'flex', gap: '2rem', marginTop: '0.5rem', color: 'var(--text-color)' }}>
-                    <span><strong>Pre Issue Holding:</strong> {ipo.promoterHolding.preIssue}%</span>
-                    <span><strong>Post Issue Holding:</strong> {ipo.promoterHolding.postIssue}%</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          )}
           
-          {(ipo.registrar?.name || (ipo.leadManagers && ipo.leadManagers.length > 0)) && (
+
+          {ipo.aboutIpo && (
             <div className={styles.sectionCard}>
-              <h2 className={styles.sectionTitle}>Registrar & Lead Managers</h2>
-              <div className={styles.detailGrid}>
-                {ipo.registrar?.name && (
-                  <div className={styles.detailItem} style={{ gridColumn: '1 / -1' }}>
-                    <span className={styles.detailLabel}>Registrar</span>
-                    <span className={styles.detailValue}>
-                      {ipo.registrar.name}
-                      {ipo.registrar.website && <span> | <a href={ipo.registrar.website} target="_blank" rel="noreferrer" style={{color:'var(--primary-color)'}}>Website</a></span>}
-                      {ipo.registrar.phone && <span> | {ipo.registrar.phone}</span>}
-                    </span>
-                  </div>
-                )}
-                {ipo.leadManagers && ipo.leadManagers.length > 0 && (
-                  <div className={styles.detailItem} style={{ gridColumn: '1 / -1' }}>
-                    <span className={styles.detailLabel}>Lead Managers</span>
-                    <span className={styles.detailValue}>{ipo.leadManagers.join(', ')}</span>
-                  </div>
-                )}
+              <h2 className={styles.sectionTitle}>About the IPO</h2>
+              <div style={{ lineHeight: 1.6, color: "var(--text-color)", overflowWrap: 'break-word', wordWrap: 'break-word', whiteSpace: 'normal' }} className="rich-text-content">
+                <div dangerouslySetInnerHTML={{ __html: ipo.aboutIpo.replace(/&nbsp;|\u00A0/g, ' ').replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, '<h2$1>$2</h2>').replace(/http:\/\//gi, 'https://') }} />
               </div>
             </div>
           )}
 
-          {ipo.customTabs?.filter(t => !['general', 'timeline', 'price', 'financials', 'affiliate'].includes(t.id)).map(tab => (
-            <div className={styles.sectionCard} key={tab.id}>
-              <h2 className={styles.sectionTitle}>{tab.name}</h2>
-              <div className={styles.detailGrid}>
-                {renderCustomFieldsAsGrid(tab.id)}
+          {ipo.customTabs?.filter(t => !['general', 'timeline', 'price', 'financials', 'affiliate', 'faqs', 'contact'].includes(t.id)).map(tab => {
+            const hasFields = tab.fields && tab.fields.length > 0 && tab.fields.some(f => shouldDisplayField(f.value));
+            if (!hasFields) return null;
+            return (
+              <div className={styles.sectionCard} key={tab.id}>
+                <h2 className={styles.sectionTitle}>{tab.name}</h2>
+                <div className={styles.detailGrid}>
+                  {renderCustomFieldsAsGrid(tab.id)}
+                </div>
+              </div>
+            );
+          })}
+
+          {ipo.faqs && ipo.faqs.length > 0 && (
+            <div className={styles.sectionCard}>
+              <h2 className={styles.sectionTitle}>Frequently Asked Questions</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {ipo.faqs.map((faq, idx) => (
+                  <FAQItem key={idx} faq={faq} />
+                ))}
               </div>
             </div>
-          ))}
+          )}
 
         </div>
         
         <div className={styles.sideColumn}>
-          <div className={styles.applyCard}>
-            <h3 className={styles.applyTitle}>Apply for {ipo.symbol} IPO</h3>
-            <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
-              Get expert consultation or open a Demat account to apply for this IPO.
-            </p>
-            {ipo.affiliateLink ? (
-              <a href={ipo.affiliateLink} target="_blank" rel="noopener noreferrer" className={styles.applyBtn}>
-                Apply Now
-              </a>
-            ) : (
-              <Link href="/services" className={styles.applyBtn}>
-                Consult an Expert
-              </Link>
-            )}
-            <div className={styles.detailGrid} style={{ marginTop: '1.5rem' }}>
-              {renderCustomFieldsAsGrid('affiliate')}
+          {(ipo.analysis?.verdict || ipo.affiliateLink?.trim()) && (
+            <div className={styles.applyCard}>
+              {ipo.analysis?.verdict && (
+                <div style={{ marginBottom: ipo.affiliateLink?.trim() ? '2rem' : '0', paddingBottom: ipo.affiliateLink?.trim() ? '2rem' : '0', borderBottom: ipo.affiliateLink?.trim() ? '1px dashed var(--border-color)' : 'none' }}>
+                  <h3 style={{ fontSize: '1rem', marginBottom: '1.25rem', color: 'var(--text-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#a855f7' }}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg> 
+                    AI Suggestion
+                  </h3>
+                  
+                  <div style={{
+                    display: 'inline-block',
+                    padding: '0.75rem 2rem',
+                    borderRadius: '50px',
+                    fontSize: '1.25rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '1rem',
+                    ...(ipo.analysis.verdict.toLowerCase() === 'apply' ? {
+                      background: 'linear-gradient(135deg, rgba(34,197,94,0.1), rgba(21,128,61,0.1))',
+                      color: '#16a34a',
+                      border: '1px solid rgba(34,197,94,0.3)'
+                    } : ipo.analysis.verdict.toLowerCase() === 'avoid' ? {
+                      background: 'linear-gradient(135deg, rgba(239,68,68,0.1), rgba(185,28,28,0.1))',
+                      color: '#dc2626',
+                      border: '1px solid rgba(239,68,68,0.3)'
+                    } : {
+                      background: 'linear-gradient(135deg, rgba(249,115,22,0.1), rgba(194,65,12,0.1))',
+                      color: '#ea580c',
+                      border: '1px solid rgba(249,115,22,0.3)'
+                    })
+                  }}>
+                    {ipo.analysis.verdict}
+                  </div>
+                  
+                  {ipo.analysis.reasoning && (
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>
+                      {ipo.analysis.reasoning}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {ipo.affiliateLink?.trim() && (
+                <>
+                  <h3 className={styles.applyTitle}>Apply for {ipo.symbol} IPO</h3>
+                  <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
+                    Get expert consultation or open a Demat account to apply for this IPO.
+                  </p>
+                  <a href={ipo.affiliateLink} target="_blank" rel="noopener noreferrer" className={styles.applyBtn}>
+                    Apply Now
+                  </a>
+                  <div className={styles.detailGrid} style={{ marginTop: '1.5rem' }}>
+                    {renderCustomFieldsAsGrid('affiliate')}
+                  </div>
+                </>
+              )}
             </div>
-          </div>
+          )}
 
           {effectiveListedPrice > 0 ? (
             <div className={styles.sectionCard}>
@@ -768,6 +900,41 @@ export default function IPODetailsClient({ initialData = null }: { initialData?:
               );
             })()}
           </div>
+
+          {ipo.registrar?.name && (
+            <div className={styles.sectionCard}>
+              <h2 className={styles.sectionTitle}>Registrar</h2>
+              <div style={{ marginTop: '0.5rem', color: 'var(--text-color)', lineHeight: 1.6 }}>
+                <div style={{ fontWeight: 'bold' }}>{ipo.registrar.name}</div>
+                {ipo.registrar.website && <div><a href={ipo.registrar.website} target="_blank" rel="noreferrer" style={{color:'var(--primary-color)'}}>Website</a></div>}
+                {ipo.registrar.phone && <div>{ipo.registrar.phone}</div>}
+                {ipo.registrar.email && <div>{ipo.registrar.email}</div>}
+              </div>
+            </div>
+          )}
+
+          {ipo.leadManagers && ipo.leadManagers.length > 0 && (
+            <div className={styles.sectionCard}>
+              <h2 className={styles.sectionTitle}>Lead Managers</h2>
+              <div style={{ marginTop: '0.5rem', color: 'var(--text-color)', lineHeight: 1.6 }}>
+                {ipo.leadManagers
+                  .flatMap(lm => {
+                    const parts = lm.split(/(Ltd\.|Pvt\.Ltd\.|Co\.Ltd\.|Limited|LLC|Inc\.|Co\.|Corp\.|Corporation|LLP|L\.P\.|Pvt Ltd|Private Limited)\s+(?=[A-Z])/i);
+                    return parts.reduce((acc: string[], curr, i) => {
+                      if (i % 2 === 0) {
+                        acc.push(curr);
+                      } else {
+                        acc[acc.length - 1] += ' ' + curr;
+                      }
+                      return acc;
+                    }, []);
+                  })
+                  .map((lm, idx) => (
+                  <div key={idx} style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>{lm.trim()}</div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {ipo.analysis && ipo.analysis.verdict && (
             <div className={styles.sectionCard}>

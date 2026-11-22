@@ -6,10 +6,8 @@ import { db, storage } from "../../../../lib/firebase";
 import { collection, addDoc, serverTimestamp, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Plus } from "lucide-react";
-import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-
-const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
+import RichTextEditor from "../../../../components/RichTextEditor";
 
 export default function AdminNewsAdd() {
   const router = useRouter();
@@ -17,6 +15,8 @@ export default function AdminNewsAdd() {
   const [slug, setSlug] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [allCategories, setAllCategories] = useState<any[]>([]);
+  const [authors, setAuthors] = useState<any[]>([]);
+  const [authorId, setAuthorId] = useState("");
   const [tags, setTags] = useState("");
   const [content, setContent] = useState("");
   const [excerpt, setExcerpt] = useState("");
@@ -33,63 +33,21 @@ export default function AdminNewsAdd() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
 
-  const joditConfig = useMemo(() => ({
-    readonly: false,
-    height: 500,
-    placeholder: 'Start writing your amazing article...',
-    uploader: {
-      insertImageAsBase64URI: true
-    },
-    buttons: [
-      'bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', '|',
-      'font', 'fontsize', 'brush', 'paragraph', '|',
-      'align', 'outdent', 'indent', '|',
-      'ul', 'ol', '|',
-      'eraser', 'copyformat', 'hr', 'symbol', 
-      '\n',
-      'source', '|',
-      'undo', 'redo', '|',
-      'link', 'image', 'video', 'file', 'table', '|',
-      'find', 'preview', 'print', '|',
-      'fullsize', 'about'
-    ],
-    controls: {
-      font: {
-        list: {
-          'Arial,Helvetica,sans-serif': 'Arial',
-          'Georgia,serif': 'Georgia',
-          'Impact,Charcoal,sans-serif': 'Impact',
-          'Tahoma,Geneva,sans-serif': 'Tahoma',
-          'Times New Roman,Times,serif': 'Times New Roman',
-          'Verdana,Geneva,sans-serif': 'Verdana',
-          'Courier New,Courier,monospace': 'Courier New',
-          'Comic Sans MS,Comic Sans,cursive': 'Comic Sans',
-          'Trebuchet MS,Helvetica,sans-serif': 'Trebuchet MS',
-          'Palatino Linotype,Book Antiqua,Palatino,serif': 'Palatino',
-          'Lucida Sans Unicode,Lucida Grande,sans-serif': 'Lucida Sans',
-          'Garamond,serif': 'Garamond',
-          'Brush Script MT,cursive': 'Brush Script',
-          'Calibri,sans-serif': 'Calibri'
-        }
-      }
-    },
-    showCharsCounter: true,
-    showWordsCounter: true,
-    showXPathInStatusbar: true,
-    resizer: {
-      showSize: true
-    },
-    toolbarAdaptive: false,
-    style: {
-      background: '#ffffff',
-      color: '#333333',
-      fontFamily: 'inherit'
-    }
-  }), []);
+
 
   useEffect(() => {
     fetchCategories();
+    fetchAuthors();
   }, []);
+
+  const fetchAuthors = async () => {
+    const querySnapshot = await getDocs(collection(db, "news_authors"));
+    const authorData: any[] = [];
+    querySnapshot.forEach((doc) => {
+      authorData.push({ id: doc.id, ...doc.data() });
+    });
+    setAuthors(authorData);
+  };
 
   const fetchCategories = async () => {
     const querySnapshot = await getDocs(collection(db, "news_categories"));
@@ -190,9 +148,14 @@ export default function AdminNewsAdd() {
         setCurrentImage(uploadedImageUrl);
       }
 
+      const selectedAuthorObj = authors.find(a => a.id === authorId);
+
       const newsData = {
         title,
         slug,
+        authorId,
+        author: selectedAuthorObj ? selectedAuthorObj.name : "NetProfit Team",
+        authorUsername: selectedAuthorObj ? (selectedAuthorObj.username || "") : "",
         categories,
         tags: tags.split(',').map(t => t.trim()).filter(t => t),
         content,
@@ -312,6 +275,19 @@ export default function AdminNewsAdd() {
             />
           </div>
           <div className={styles.inputGroup}>
+            <label>Author</label>
+            <select 
+              className={styles.inputField} 
+              value={authorId}
+              onChange={(e) => setAuthorId(e.target.value)}
+            >
+              <option value="">-- Default / NetProfit Team --</option>
+              {authors.map(a => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.inputGroup}>
             <label>Categories (Select multiple)</label>
             <select 
               className={styles.inputField} 
@@ -391,13 +367,7 @@ export default function AdminNewsAdd() {
           </div>
           <div className={styles.inputGroup} style={{ paddingBottom: '2rem' }}>
             <label>Full Content</label>
-            <div style={{ background: 'white', color: 'black', borderRadius: '8px', border: '1px solid var(--border-color)', overflow: 'hidden', marginBottom: '3rem', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
-              <JoditEditor 
-                value={content}
-                config={joditConfig}
-                onBlur={(newContent) => setContent(newContent)}
-              />
-            </div>
+            <RichTextEditor value={content} onChange={setContent} />
           </div>
           
           <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>

@@ -67,7 +67,7 @@ export default function ToolDetailsClient({ initialToolName = null, slug }: { in
     
     return (
       <>
-        <ToolHeader toolSlug={slug} />
+        <ToolHeader toolSlug={slug} initialTitle={toolName} />
         <div className={styles.container}>
           <div className={styles.contentWrapper}>
             <LoanCalculator title={toolName || "Loan Calculator"} defaultAmount={defaults.amount} defaultRate={defaults.rate} defaultTenure={defaults.tenure} />
@@ -81,7 +81,7 @@ export default function ToolDetailsClient({ initialToolName = null, slug }: { in
   if (isGratuityCalculator) {
     return (
       <>
-        <ToolHeader toolSlug={slug} />
+        <ToolHeader toolSlug={slug} initialTitle={toolName} />
         <div className={styles.container}>
           <div className={styles.contentWrapper}>
             <GratuityCalculator title={toolName || "Gratuity Calculator"} />
@@ -95,7 +95,7 @@ export default function ToolDetailsClient({ initialToolName = null, slug }: { in
   if (isPpfCalculator) {
     return (
       <>
-        <ToolHeader toolSlug={slug} />
+        <ToolHeader toolSlug={slug} initialTitle={toolName} />
         <div className={styles.container}>
           <div className={styles.contentWrapper}>
             <PpfCalculator title={toolName || "PPF Calculator"} />
@@ -109,7 +109,7 @@ export default function ToolDetailsClient({ initialToolName = null, slug }: { in
   if (isSsyCalculator) {
     return (
       <>
-        <ToolHeader toolSlug={slug} />
+        <ToolHeader toolSlug={slug} initialTitle={toolName} />
         <div className={styles.container}>
           <div className={styles.contentWrapper}>
             <SsyCalculator title={toolName || "SSY Calculator"} />

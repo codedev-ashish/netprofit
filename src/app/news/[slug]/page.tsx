@@ -36,6 +36,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   let publishedTime: string | undefined = undefined;
   let modifiedTime: string | undefined = undefined;
   let authorName: string | undefined = undefined;
+  let authorId: string | undefined = undefined;
+  let authorUsername: string | undefined = undefined;
   let categoryName: string | undefined = undefined;
 
   let isCustomMeta = false;
@@ -51,6 +53,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       publishedTime = data.createdAt ? (typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate().toISOString() : data.createdAt) : undefined;
       modifiedTime = data.updatedAt ? (typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate().toISOString() : data.updatedAt) : undefined;
       authorName = data.author || undefined;
+      authorId = data.authorId || undefined;
+      authorUsername = data.authorUsername || undefined;
       categoryName = data.category || undefined;
       if (data.metaDescription) {
         description = data.metaDescription;
@@ -69,6 +73,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         publishedTime = data.createdAt ? (typeof data.createdAt.toDate === 'function' ? data.createdAt.toDate().toISOString() : data.createdAt) : undefined;
         modifiedTime = data.updatedAt ? (typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate().toISOString() : data.updatedAt) : undefined;
         authorName = data.author || undefined;
+        authorId = data.authorId || undefined;
+        authorUsername = data.authorUsername || undefined;
         categoryName = data.category || undefined;
         if (data.metaDescription) {
           description = data.metaDescription;
@@ -81,6 +87,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
   } catch (error) {
     console.error("Error generating metadata for news:", error);
+  }
+
+  if (authorId && !authorUsername) {
+    try {
+      const authorDoc = await getDoc(doc(db, "news_authors", authorId));
+      if (authorDoc.exists()) {
+        authorUsername = authorDoc.data().username || undefined;
+      }
+    } catch (e) {}
   }
 
   if (description && !isCustomMeta) {
@@ -101,7 +116,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       siteName: "NetProfit",
       publishedTime,
       modifiedTime,
-      authors: authorName ? [authorName] : undefined,
+      authors: (authorUsername || authorId) ? [`https://netprofit.in/author/${authorUsername || authorId}`] : (authorName ? [authorName] : undefined),
       section: categoryName,
       images: [
         {
@@ -157,6 +172,20 @@ export default async function NewsDetailsPage({ params }: { params: Promise<{ sl
 
   if (!newsData) {
     notFound();
+  }
+
+  if (newsData.authorId && !newsData.authorUsername) {
+    try {
+      const authorDoc = await getDoc(doc(db, "news_authors", newsData.authorId));
+      if (authorDoc.exists()) {
+        const aData = authorDoc.data();
+        if (aData.username) {
+          newsData.authorUsername = aData.username;
+        }
+      }
+    } catch (e) {
+      console.error("Error fetching author details:", e);
+    }
   }
 
   let rawContent = newsData.content ? newsData.content.replace(/&nbsp;/g, ' ') : '';
@@ -226,7 +255,7 @@ export default async function NewsDetailsPage({ params }: { params: Promise<{ sl
     "author": [{
       "@type": "Person",
       "name": newsData.author || "NetProfit Team",
-      "url": "https://netprofit.in"
+      "url": (newsData.authorUsername || newsData.authorId) ? `https://netprofit.in/author/${newsData.authorUsername || newsData.authorId}` : "https://netprofit.in"
     }],
     "publisher": {
       "@type": "Organization",
@@ -261,7 +290,15 @@ export default async function NewsDetailsPage({ params }: { params: Promise<{ sl
 
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', marginTop: '0.5rem' }}>
             <p className={styles.date} style={{ color: 'var(--text-muted)', margin: 0 }}>
-              By <strong style={{ color: 'var(--text-color)' }}>{newsData.author || "NetProfit Team"}</strong> • {dateString}
+              By <strong style={{ color: 'var(--text-color)' }}>
+                {(newsData.authorUsername || newsData.authorId) ? (
+                  <Link href={`/author/${newsData.authorUsername || newsData.authorId}`} style={{ color: 'inherit', textDecoration: 'none', borderBottom: '1px dotted var(--text-color)' }}>
+                    {newsData.author || "NetProfit Team"}
+                  </Link>
+                ) : (
+                  newsData.author || "NetProfit Team"
+                )}
+              </strong> • {dateString}
             </p>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               {Array.isArray(newsData.categories) && newsData.categories.length > 0
@@ -306,7 +343,7 @@ export default async function NewsDetailsPage({ params }: { params: Promise<{ sl
             </div>
           )}
 
-          <div className={styles.articleBody} style={{ padding: '2rem 0', border: 'none', boxShadow: 'none', background: 'transparent' }} dangerouslySetInnerHTML={{ __html: rawContent.replace(/http:\/\//gi, 'https://') }} />
+          <div className={styles.articleBody} style={{ padding: '2rem 0', border: 'none', boxShadow: 'none', background: 'transparent' }} dangerouslySetInnerHTML={{ __html: rawContent ? rawContent.replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, '<h2$1>$2</h2>').replace(/http:\/\//gi, 'https://') : '' }} />
 
           {Array.isArray(newsData.tags) && newsData.tags.length > 0 && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>

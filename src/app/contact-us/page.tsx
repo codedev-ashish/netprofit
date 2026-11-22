@@ -114,7 +114,7 @@ export default function ContactUsPage() {
         {pageData?.content ? (
           <div
             className={styles.subtitle}
-            dangerouslySetInnerHTML={{ __html: pageData.content.replace(/http:\/\//gi, 'https://') }}
+            dangerouslySetInnerHTML={{ __html: pageData.content ? pageData.content.replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, '<h2$1>$2</h2>').replace(/http:\/\//gi, 'https://') : '' }}
           />
         ) : (
           <p className={styles.subtitle}>

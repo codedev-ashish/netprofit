@@ -34,7 +34,7 @@ export interface CustomField {
   id: string;
   name: string;
   value: string;
-  type?: 'text' | 'number' | 'date' | 'url';
+  type?: 'text' | 'textarea' | 'number' | 'date' | 'url';
 }
 
 export interface CustomTab {
@@ -129,10 +129,10 @@ export interface IPOPromoterHolding {
 }
 
 export interface AIAnalysisResult {
-  summary: string;
-  verdict: 'APPLY' | 'AVOID' | 'NEUTRAL';
+  summary?: string;
+  verdict: 'Apply' | 'Moderate Risk' | 'Avoid' | string;
   reasoning: string;
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
 }
 
 export interface IPOData {
@@ -148,6 +148,7 @@ export interface IPOData {
   canonicalUrl?: string;
   logoUrl?: string;
   description: string;
+  aboutIpo?: string;
   objectsOfTheIssue: string[];
   type: IPOType | string;
   status: IPOStatus | string;
@@ -196,6 +197,7 @@ export interface IPOData {
   analysis?: AIAnalysisResult;
   pros?: string[];
   cons?: string[];
+  faqs?: { question: string, answer: string }[];
   affiliateLink?: string;
   customTabs?: CustomTab[];
 }
@@ -244,7 +246,14 @@ export const DEFAULT_IPO_TEMPLATE: IPOData = {
     { id: 'priceBandHigh', label: 'Price Band High', value: '' },
     { id: 'faceValue', label: 'Face Value', value: '' },
     { id: 'lotSize', label: 'Lot Size', value: '' },
-    { id: 'issueSize', label: 'Issue Size (Cr)', value: '' },
+    { id: 'totalIssueShares', label: 'Total Issue Size (Shares)', value: '' },
+    { id: 'totalIssueSize', label: 'Total Issue Size (Cr)', value: '' },
+    { id: 'freshIssueShares', label: 'Fresh Issue (Shares)', value: '' },
+    { id: 'freshIssue', label: 'Fresh Issue (Cr)', value: '' },
+    { id: 'ofsShares', label: 'Offer for Sale (Shares)', value: '' },
+    { id: 'ofs', label: 'Offer for Sale (Cr)', value: '' },
+    { id: 'shareHoldingPreIssue', label: 'Share Holding Pre Issue', value: '' },
+    { id: 'shareHoldingPostIssue', label: 'Share Holding Post Issue', value: '' },
     { id: 'listedPrice', label: 'Listed Price (₹)', value: '' }
   ],
   listingAt: ['NSE', 'BSE'],

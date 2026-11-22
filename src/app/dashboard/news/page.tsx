@@ -42,51 +42,55 @@ export default function DashboardNewsPage() {
   }, []);
 
   return (
-    <div className={styles.container}>
-      <div className={styles.hero} style={{ borderRadius: '8px', marginBottom: '2rem' }}>
-        <h1 className={styles.title} style={{ fontSize: '2rem' }}>News</h1>
-        <p className={styles.subtitle}>Latest updates and insights.</p>
+    <div style={{ padding: '0.5rem' }}>
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '0.5rem' }}>News & Updates</h1>
+        <p style={{ color: 'var(--text-muted)' }}>Latest insights, updates, and announcements.</p>
       </div>
 
-      <div className={styles.contentWrapper} style={{ margin: 0, padding: 0, maxWidth: '100%' }}>
+      <div style={{ width: '100%' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '4rem' }}>Loading latest news...</div>
+          <div className="cleartax-card" style={{ textAlign: 'center', padding: '4rem', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+            Loading latest news...
+          </div>
         ) : newsItems.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '4rem' }}>No news published yet. Check back later!</div>
+          <div className="cleartax-card" style={{ textAlign: 'center', padding: '4rem', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+            No news published yet. Check back later!
+          </div>
         ) : (
-          <div className={styles.newsGrid}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
             {newsItems.map((item) => (
-              <article key={item.id} className={styles.newsCard}>
+              <article key={item.id} className="cleartax-card" style={{ background: 'var(--card-bg)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s, box-shadow 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = 'var(--shadow-lg)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--shadow)'; }}>
                 {item.imageUrl && (
                   <Link href={`/dashboard/news/${item.slug || item.id}`} style={{ display: 'block' }}>
-                    <div className={styles.cardImageContainer}>
-                      <img src={item.imageUrl} alt={item.title} className={styles.cardImage} />
+                    <div style={{ height: '200px', width: '100%', overflow: 'hidden' }}>
+                      <img src={item.imageUrl} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                   </Link>
                 )}
-                <div className={styles.cardContent}>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                     {item.categories && item.categories.length > 0 
                       ? item.categories.map((cat: string) => (
-                          <span key={cat} className={styles.categoryBadge} style={{ background: 'var(--primary)', color: 'white' }}>
+                          <span key={cat} style={{ background: 'var(--bg-secondary)', color: 'var(--text-color)', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>
                             {cat}
                           </span>
                         ))
                       : (
-                          <span className={styles.categoryBadge} style={{ background: 'var(--primary)', color: 'white' }}>
+                          <span style={{ background: 'var(--bg-secondary)', color: 'var(--text-color)', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>
                             {item.category || 'Uncategorized'}
                           </span>
                         )
                     }
                   </div>
-                  <Link href={`/dashboard/news/${item.slug || item.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <h2 className={styles.newsTitle}>{item.title}</h2>
+                  <Link href={`/dashboard/news/${item.slug || item.id}`} style={{ textDecoration: 'none', color: 'inherit', marginBottom: '0.5rem' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, lineHeight: 1.4, color: 'var(--text-color)' }}>{item.title}</h2>
                   </Link>
-                  <p className={styles.newsDate}>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem', fontWeight: 500 }}>
                     {item.date ? (typeof item.date === 'string' ? item.date : (typeof item.date.toDate === 'function' ? item.date.toDate().toLocaleDateString() : (item.date.seconds ? new Date(item.date.seconds * 1000).toLocaleDateString() : 'Unknown Date'))) : 'Unknown Date'}
                   </p>
-                  <p className={styles.newsExcerpt}>{item.excerpt}</p>
-                  <Link href={`/dashboard/news/${item.slug || item.id}`} className={styles.readMore}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.5, marginBottom: '1.5rem', flex: 1, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.excerpt}</p>
+                  <Link href={`/dashboard/news/${item.slug || item.id}`} style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent-color)', fontWeight: 600, textDecoration: 'none', marginTop: 'auto' }}>
                     Read Full Article →
                   </Link>
                 </div>

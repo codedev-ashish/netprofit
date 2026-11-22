@@ -155,9 +155,20 @@ export default async function IPODetailsPage({ params }: { params: Promise<{ slu
         "@context": "https://schema.org",
         "@type": "Event",
         "name": `${ipoData?.name || "IPO"} Subscription Window`,
+        "description": ipoData?.metaDescription || ipoData?.description || `Subscription window for ${ipoData?.name || "IPO"}`,
         "startDate": new Date(openDateStr).toISOString(),
         "endDate": new Date(closeDateStr).toISOString(),
-        "eventStatus": "https://schema.org/EventScheduled"
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "https://schema.org/OnlineEventAttendanceMode",
+        "location": {
+          "@type": "VirtualLocation",
+          "url": `https://netprofit.in/ipo/${slug}`
+        },
+        "organizer": {
+          "@type": "Organization",
+          "name": ipoData?.name || "Issuing Company",
+          "url": `https://netprofit.in/ipo/${slug}`
+        }
       };
     }
   } catch (e) {}

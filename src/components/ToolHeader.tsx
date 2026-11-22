@@ -6,11 +6,16 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import styles from "./ToolHeader.module.css";
 import ShareButtons from "./ShareButtons";
 
-export default function ToolHeader({ toolSlug }: { toolSlug: string }) {
-  const [title, setTitle] = useState("Loading...");
-  const [subtitle, setSubtitle] = useState("");
+export default function ToolHeader({ toolSlug, initialTitle, initialSubtitle }: { toolSlug: string, initialTitle?: string | null, initialSubtitle?: string | null }) {
+  const [title, setTitle] = useState(initialTitle || "Loading...");
+  const [subtitle, setSubtitle] = useState(initialSubtitle || "");
 
   useEffect(() => {
+    if (initialTitle) {
+      setTitle(initialTitle);
+      if (initialSubtitle) setSubtitle(initialSubtitle);
+      return;
+    }
     const fetchToolData = async () => {
       try {
         const q = query(collection(db, "tools"), where("slug", "==", toolSlug));
@@ -32,7 +37,7 @@ export default function ToolHeader({ toolSlug }: { toolSlug: string }) {
 
   return (
     <div className={styles.hero}>
-      <div className={styles.title} style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{title}</div>
+      <h1 className={styles.title} style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>{title}</h1>
       {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
         <ShareButtons title={title} text={subtitle} />

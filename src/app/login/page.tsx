@@ -1,4 +1,4 @@
-import AuthPage from "../auth/page";
+import AuthComponent from "../../components/AuthComponent";
 import { Metadata } from "next";
 
 import { db } from "../../lib/firebase";
@@ -34,5 +34,5 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function Login() {
-  return <AuthPage defaultIsLogin={true} />;
+  return <AuthComponent defaultIsLogin={true} />;
 }

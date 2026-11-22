@@ -18,6 +18,28 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return {
+      beforeFiles: [
+        {
+          source: '/robots.txt',
+          destination: '/api/serve-root-file?file=robots.txt',
+        },
+        {
+          source: '/ads.txt',
+          destination: '/api/serve-root-file?file=ads.txt',
+        },
+        {
+          source: '/app-ads.txt',
+          destination: '/api/serve-root-file?file=app-ads.txt',
+        },
+        {
+          source: '/llms.txt',
+          destination: '/api/serve-root-file?file=llms.txt',
+        },
+        {
+          source: '/ai.txt',
+          destination: '/api/serve-root-file?file=ai.txt',
+        },
+      ],
       afterFiles: [
         {
           source: '/:file([^/]+\\.html)',

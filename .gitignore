@@ -3,7 +3,10 @@ node_modules
 .next
 .env.local
 .env.production
+.env
 
 node_modules_old*
 .vercel
-.env
+.firebase
+.open-next
+*.tsbuildinfo

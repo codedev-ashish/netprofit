@@ -39,12 +39,12 @@ export default function AdminPages() {
       const querySnapshot = await getDocs(collection(db, "pages"));
       const items: CustomPage[] = [];
       let hasContactUs = false;
-      
+
       querySnapshot.forEach((doc) => {
         if (doc.id === "contact-us") hasContactUs = true;
         items.push({ id: doc.id, ...doc.data() } as CustomPage);
       });
-      
+
       if (!hasContactUs) {
         // Auto-seed Contact Us page for editability
         const contactData = {
@@ -57,7 +57,7 @@ export default function AdminPages() {
         await setDoc(doc(db, "pages", "contact-us"), contactData);
         items.push({ id: "contact-us", ...contactData } as CustomPage);
       }
-      
+
       setPages(items);
     } catch (error) {
       console.error("Error fetching pages:", error);
@@ -107,29 +107,29 @@ export default function AdminPages() {
 
     setIsSubmitting(true);
     try {
-        if (editingPageId) {
-          // Update existing document
-          await updateDoc(doc(db, "pages", editingPageId), {
-            title,
-            content,
-            metaTitle,
-            metaDescription,
-            seoKeywords
-          });
-        } else {
-          // Create new document
-          await setDoc(doc(db, "pages", slug), {
-            title,
-            slug,
-            content,
-            metaTitle,
-            metaDescription,
-            seoKeywords,
-            isPublished: true,
-            createdAt: serverTimestamp()
-          });
-        }
-      
+      if (editingPageId) {
+        // Update existing document
+        await updateDoc(doc(db, "pages", editingPageId), {
+          title,
+          content,
+          metaTitle,
+          metaDescription,
+          seoKeywords
+        });
+      } else {
+        // Create new document
+        await setDoc(doc(db, "pages", slug), {
+          title,
+          slug,
+          content,
+          metaTitle,
+          metaDescription,
+          seoKeywords,
+          isPublished: true,
+          createdAt: serverTimestamp()
+        });
+      }
+
       setTitle("");
       setSlug("");
       setContent("");
@@ -197,16 +197,16 @@ export default function AdminPages() {
           <p className={styles.pageSubtitle}>Create and manage static pages like About Us, Privacy Policy, etc.</p>
         </div>
       </div>
-      
+
       <div className={`cleartax-card ${styles.managementCard}`}>
         <h2>{editingPageId ? "Edit Page" : "Create New Page"}</h2>
         <form className={styles.form} onSubmit={handleAdd}>
           <div className={styles.inputGroup}>
             <label>Page Title</label>
-            <input 
-              type="text" 
-              placeholder="e.g. Privacy Policy" 
-              className={styles.inputField} 
+            <input
+              type="text"
+              placeholder="e.g. Privacy Policy"
+              className={styles.inputField}
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
               required
@@ -214,10 +214,10 @@ export default function AdminPages() {
           </div>
           <div className={styles.inputGroup}>
             <label>URL Slug</label>
-            <input 
-              type="text" 
-              placeholder="e.g. privacy-policy" 
-              className={styles.inputField} 
+            <input
+              type="text"
+              placeholder="e.g. privacy-policy"
+              className={styles.inputField}
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               required
@@ -230,10 +230,10 @@ export default function AdminPages() {
           </div>
           <div className={styles.inputGroup}>
             <label>Page Content (HTML/Rich Text)</label>
-            <textarea 
-              rows={10} 
-              placeholder="<h2>Privacy Policy</h2><p>...</p>" 
-              className={styles.inputField} 
+            <textarea
+              rows={10}
+              placeholder="<h2>Privacy Policy</h2><p>...</p>"
+              className={styles.inputField}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               required
@@ -242,16 +242,16 @@ export default function AdminPages() {
           <div className={styles.inputGroup}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
               <label style={{ marginBottom: 0 }}>Custom SEO Meta Title (Optional)</label>
-              <button 
-                type="button" 
-                onClick={handleOptimizeSEO} 
+              <button
+                type="button"
+                onClick={handleOptimizeSEO}
                 disabled={isOptimizing || !content}
-                style={{ 
-                  background: 'linear-gradient(135deg, #a855f7, #7e22ce)', 
-                  border: 'none', 
-                  color: 'white', 
-                  padding: '0.4rem 0.8rem', 
-                  borderRadius: '4px', 
+                style={{
+                  background: 'linear-gradient(135deg, #a855f7, #7e22ce)',
+                  border: 'none',
+                  color: 'white',
+                  padding: '0.4rem 0.8rem',
+                  borderRadius: '4px',
                   cursor: 'pointer',
                   fontSize: '0.85rem',
                   display: 'flex',
@@ -262,30 +262,30 @@ export default function AdminPages() {
                 {isOptimizing ? "Optimizing..." : "✨ AI Optimize SEO & Links"}
               </button>
             </div>
-            <input 
-              type="text" 
-              placeholder="Custom SEO Title" 
-              className={styles.inputField} 
+            <input
+              type="text"
+              placeholder="Custom SEO Title"
+              className={styles.inputField}
               value={metaTitle}
               onChange={(e) => setMetaTitle(e.target.value)}
             />
           </div>
           <div className={styles.inputGroup}>
             <label>Custom SEO Meta Description (Optional)</label>
-            <textarea 
-              rows={3} 
-              placeholder="Custom SEO Description..." 
-              className={styles.inputField} 
+            <textarea
+              rows={3}
+              placeholder="Custom SEO Description..."
+              className={styles.inputField}
               value={metaDescription}
               onChange={(e) => setMetaDescription(e.target.value)}
             />
           </div>
           <div className={styles.inputGroup}>
             <label>SEO Keywords (Comma-separated)</label>
-            <input 
-              type="text" 
-              placeholder="e.g. business registration, tax filing" 
-              className={styles.inputField} 
+            <input
+              type="text"
+              placeholder="e.g. business registration, tax filing"
+              className={styles.inputField}
               value={seoKeywords}
               onChange={(e) => setSeoKeywords(e.target.value)}
             />
@@ -295,9 +295,9 @@ export default function AdminPages() {
               {isSubmitting ? "Saving..." : (editingPageId ? "Update Page" : "Publish Page")}
             </button>
             {editingPageId && (
-              <button 
-                type="button" 
-                onClick={handleCancelEdit} 
+              <button
+                type="button"
+                onClick={handleCancelEdit}
                 style={{ padding: '0.75rem 1.5rem', borderRadius: 'var(--radius)', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer', fontWeight: 600 }}
               >
                 Cancel Edit
@@ -316,7 +316,7 @@ export default function AdminPages() {
             pages.map(page => (
               <div key={page.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'var(--bg-color)' }}>
                 <div>
-                  <strong style={{ fontSize: '1.1rem', color: 'var(--text-color)', textDecoration: page.isPublished === false ? 'line-through' : 'none', opacity: page.isPublished === false ? 0.6 : 1 }}>{page.title}</strong> 
+                  <strong style={{ fontSize: '1.1rem', color: 'var(--text-color)', textDecoration: page.isPublished === false ? 'line-through' : 'none', opacity: page.isPublished === false ? 0.6 : 1 }}>{page.title}</strong>
                   {page.isPublished === false && <span style={{ fontSize: '0.7rem', background: '#e2e8f0', color: '#475569', padding: '2px 6px', borderRadius: '4px', fontWeight: 600, marginLeft: '8px' }}>Hidden</span>}
                   <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                     <a href={`/${page.slug}`} target="_blank" style={{ color: 'var(--accent-color)', textDecoration: 'none' }}>
@@ -325,27 +325,27 @@ export default function AdminPages() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <button 
-                    onClick={() => togglePublish(page.slug, page.isPublished !== false)} 
+                  <button
+                    onClick={() => togglePublish(page.slug, page.isPublished !== false)}
                     style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', transition: 'color 0.2s' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = '#f8fafc'}
                     onMouseLeave={(e) => e.currentTarget.style.color = '#94a3b8'}
                     title={page.isPublished !== false ? "Unpublish/Hide" : "Publish/Show"}
                   >
-                    {page.isPublished !== false ? <EyeOff size={18}/> : <Eye size={18}/>} 
+                    {page.isPublished !== false ? <EyeOff size={18} /> : <Eye size={18} />}
                     <span style={{ fontSize: '0.9rem' }}>{page.isPublished !== false ? 'Hide' : 'Show'}</span>
                   </button>
-                  <button 
-                    onClick={() => handleEdit(page)} 
+                  <button
+                    onClick={() => handleEdit(page)}
                     style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                   >
-                    <Edit2 size={16}/> Edit
+                    <Edit2 size={16} /> Edit
                   </button>
-                  <button 
-                    onClick={() => handleDelete(page.id)} 
+                  <button
+                    onClick={() => handleDelete(page.id)}
                     style={{ color: '#e53e3e', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                   >
-                    <Trash2 size={16}/> Delete
+                    <Trash2 size={16} /> Delete
                   </button>
                 </div>
               </div>

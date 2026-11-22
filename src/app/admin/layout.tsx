@@ -177,7 +177,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       subItems: [
         { name: "Add New", href: "/admin/news/add" },
         { name: "Published News", href: "/admin/news" },
-        { name: "Categories", href: "/admin/news/categories" }
+        { name: "Categories", href: "/admin/news/categories" },
+        { name: "Authors", href: "/admin/news/authors" }
       ]
     },
     { name: "IPOs", href: "/admin/ipos", icon: TrendingUp },

@@ -391,8 +391,8 @@ export default function AdminServices() {
           </div>
 
           {/* Hero Section Customization */}
-          <div style={{ backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '1rem', color: '#0f172a', fontSize: '1.1rem' }}>Hero Section Customization</h3>
+          <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '1.5rem' }}>
+            <h3 style={{ marginTop: 0, marginBottom: '1rem', color: 'var(--text-color)', fontSize: '1.1rem' }}>Hero Section Customization</h3>
             
             <div className={styles.inputGroup}>
               <label>Hero Subtitle</label>
@@ -1039,8 +1039,8 @@ export default function AdminServices() {
             <label htmlFor="showReviews" style={{fontWeight: 600}}>Show Reviews Section</label>
           </div>
 
-          <div className={styles.inputGroup} style={{ padding: '1rem', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', marginTop: '1rem', color: '#0f172a' }}>
-            <label style={{ fontSize: '1.1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'block', color: '#0f172a', fontWeight: 'bold' }}>Section Visibility Settings</label>
+          <div className={styles.inputGroup} style={{ padding: '1rem', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', marginTop: '1rem', color: 'var(--text-color)' }}>
+            <label style={{ fontSize: '1.1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'block', color: 'var(--text-color)', fontWeight: 'bold' }}>Section Visibility Settings</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               {Object.keys(visibility).map(key => (
                 <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1051,7 +1051,7 @@ export default function AdminServices() {
                     onChange={(e) => setVisibility({ ...visibility, [key]: e.target.checked })} 
                     style={{ width: '16px', height: '16px' }} 
                   />
-                  <label htmlFor={`vis-${key}`} style={{ fontSize: '0.9rem', textTransform: 'capitalize', color: '#334155', cursor: 'pointer' }}>
+                  <label htmlFor={`vis-${key}`} style={{ fontSize: '0.9rem', textTransform: 'capitalize', color: 'var(--text-muted)', cursor: 'pointer' }}>
                     {key.replace(/([A-Z])/g, ' $1').trim()}
                   </label>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { db } from "../../../../../src/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
@@ -15,8 +15,60 @@ export default function CreateIPOForm() {
   const [formData, setFormData] = useState<IPOData>(DEFAULT_IPO_TEMPLATE);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [chittorgarhUrl, setChittorgarhUrl] = useState('');
+  const [isFetchingData, setIsFetchingData] = useState(false);
 
   const generateSlug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+
+  useEffect(() => {
+    const getTimelineField = (keyword: string, fallback?: string) => {
+      if (formData.timelineFields) {
+        const field = formData.timelineFields.find(f => f.label.toLowerCase().includes(keyword.toLowerCase()));
+        if (field && field.value) return field.value;
+      }
+      return fallback;
+    };
+
+    const openDateStr = getTimelineField('open', formData.openDate);
+    const closeDateStr = getTimelineField('close', formData.closeDate);
+    const listingDateStr = getTimelineField('listing', formData.listingDate);
+
+    if (!openDateStr && !closeDateStr && !listingDateStr) return;
+
+    const now = new Date();
+    
+    const parseDate = (d?: string) => {
+      if (!d || d === "TBA") return null;
+      const parsed = new Date(d);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const openDate = parseDate(openDateStr);
+    const closeDate = parseDate(closeDateStr);
+    const listingDate = parseDate(listingDateStr);
+    
+    if (closeDate) {
+      closeDate.setHours(16, 0, 0, 0); 
+    }
+    
+    let calculatedStatus = formData.status;
+
+    if (listingDate && now >= listingDate) {
+      calculatedStatus = IPOStatus.LISTED;
+    } else if (closeDate && now > closeDate) {
+      calculatedStatus = IPOStatus.CLOSED;
+    } else if (openDate && now >= openDate) {
+      if (!closeDate || now <= closeDate) {
+        calculatedStatus = IPOStatus.OPEN;
+      }
+    } else if (openDate && now < openDate) {
+      calculatedStatus = IPOStatus.UPCOMING;
+    }
+
+    if (calculatedStatus !== formData.status) {
+      setFormData(prev => ({ ...prev, status: calculatedStatus }));
+    }
+  }, [formData.timelineFields, formData.openDate, formData.closeDate, formData.listingDate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -58,6 +110,263 @@ export default function CreateIPOForm() {
       alert("SEO Optimization failed: " + error.message);
     } finally {
       setIsOptimizing(false);
+    }
+  };
+
+  const handleFetchChittorgarh = async () => {
+    if (!chittorgarhUrl.includes('chittorgarh.com')) {
+      alert("Please enter a valid Chittorgarh URL.");
+      return;
+    }
+    setIsFetchingData(true);
+    try {
+      const res = await fetch("/api/ai/fetch-chittorgarh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: chittorgarhUrl })
+      });
+      let data;
+      try {
+        data = await res.json();
+      } catch (err) {
+        throw new Error(`Invalid server response (Status: ${res.status}). The server might be down or returned an error page.`);
+      }
+      
+      if (!res.ok) throw new Error(data.error || "Failed to fetch data");
+      setFormData(prev => {
+        const newData = JSON.parse(JSON.stringify(prev)); // Deep copy to safely modify arrays
+        
+        if (data.name) {
+          newData.name = data.name;
+          if (!prev.slug || prev.slug === generateSlug(prev.name)) {
+            newData.slug = generateSlug(data.name);
+          }
+        }
+        if (data.symbol) newData.symbol = data.symbol;
+        if (data.description) newData.description = data.description;
+        
+        if (data.openDate) newData.openDate = data.openDate;
+        if (data.closeDate) newData.closeDate = data.closeDate;
+        if (data.listingDate) newData.listingDate = data.listingDate;
+        if (data.priceBandLow) newData.priceBandLow = data.priceBandLow;
+        if (data.priceBandHigh) newData.priceBandHigh = data.priceBandHigh;
+        if (data.faceValue) newData.faceValue = data.faceValue;
+        if (data.lotSize) newData.lotSize = data.lotSize;
+        if (data.issueSize) newData.issueSize = data.issueSize;
+        if (data.freshIssueSize) newData.freshIssueSize = data.freshIssueSize;
+        if (data.offerForSaleSize) newData.offerForSaleSize = data.offerForSaleSize;
+        if (data.currentGmp) {
+          newData.currentGmp = data.currentGmp;
+          newData.gmpUpdatedAt = new Date().toISOString().split('T')[0];
+        }
+
+        if (data.registrar) {
+          newData.registrar = {
+            name: data.registrar.name || '',
+            phone: data.registrar.phone ? String(data.registrar.phone) : '',
+            email: data.registrar.email || '',
+            website: data.registrar.website || ''
+          };
+        }
+
+        if (data.contact) {
+          newData.contact = {
+            address: data.contact.address || '',
+            phone: data.contact.phone ? String(data.contact.phone) : '',
+            email: data.contact.email || '',
+            website: data.contact.website || ''
+          };
+        }
+
+        if (data.leadManagers && Array.isArray(data.leadManagers)) {
+          newData.leadManagers = data.leadManagers.map(String);
+        }
+
+        if (data.objectsOfTheIssue && Array.isArray(data.objectsOfTheIssue)) {
+          newData.objectsOfTheIssue = data.objectsOfTheIssue.map(String);
+        }
+        
+        if (data.aboutIpo) {
+          newData.aboutIpo = data.aboutIpo;
+        }
+
+        if (data.faqs && Array.isArray(data.faqs)) {
+          newData.faqs = data.faqs.map((faq: any) => ({
+            question: String(faq.question || ''),
+            answer: String(faq.answer || '')
+          }));
+        }
+
+        const updateFieldArray = (arrName: keyof IPOData, id: string, val: any) => {
+          if (val === undefined || val === null || val === '') return;
+          if (!newData[arrName]) (newData[arrName] as any) = [];
+          
+          // Clone the array and its items to avoid mutating DEFAULT_IPO_TEMPLATE
+          const arr = [...(newData[arrName] as any[])].map(item => ({...item}));
+          newData[arrName] = arr as any;
+          
+          const idx = arr.findIndex(f => f.id === id);
+          if (idx !== -1) {
+             arr[idx].value = String(val);
+          }
+        };
+
+        updateFieldArray('issueDetailsFields', 'priceBandLow', data.priceBandLow);
+        updateFieldArray('issueDetailsFields', 'priceBandHigh', data.priceBandHigh);
+        updateFieldArray('issueDetailsFields', 'faceValue', data.faceValue);
+        updateFieldArray('issueDetailsFields', 'lotSize', data.lotSize);
+        updateFieldArray('issueDetailsFields', 'totalIssueShares', data.issueSizeShares);
+        updateFieldArray('issueDetailsFields', 'totalIssueSize', data.issueSize);
+        updateFieldArray('issueDetailsFields', 'freshIssueShares', data.freshIssueShares);
+        updateFieldArray('issueDetailsFields', 'freshIssue', data.freshIssueSize);
+        updateFieldArray('issueDetailsFields', 'ofsShares', data.offerForSaleShares);
+        updateFieldArray('issueDetailsFields', 'ofs', data.offerForSaleSize);
+        updateFieldArray('issueDetailsFields', 'shareHoldingPreIssue', data.shareHoldingPreIssue);
+        updateFieldArray('issueDetailsFields', 'shareHoldingPostIssue', data.shareHoldingPostIssue);
+
+        updateFieldArray('timelineFields', 'openDate', data.openDate);
+        updateFieldArray('timelineFields', 'closeDate', data.closeDate);
+        updateFieldArray('timelineFields', 'listingDate', data.listingDate);
+
+        if (data.timelineEvents && data.timelineEvents.length > 0) {
+          newData.timelineFields = [...(newData.timelineFields || [])].map(item => ({...item}));
+          const arr = newData.timelineFields;
+          data.timelineEvents.forEach((te: any) => {
+            const teLower = te.label.toLowerCase();
+            const existingIdx = arr.findIndex((f: any) => 
+              f.label.toLowerCase().includes(teLower) || teLower.includes(f.label.toLowerCase())
+            );
+            if (existingIdx !== -1) {
+              arr[existingIdx].value = String(te.value);
+            } else {
+              arr.push({ id: `tl_${Date.now()}_${Math.random()}`, label: te.label, value: String(te.value) });
+            }
+          });
+        }
+
+        if (data.financialTable && data.financialTable.length > 0) {
+          newData.financialTable = { columns: [...(newData.financialTable?.columns || [])], rows: [] };
+          if (newData.financialTable.columns.length === 0) {
+             newData.financialTable.columns = [
+               { id: 'year', label: 'Year' },
+               { id: 'revenue', label: 'Revenue (Cr)' },
+               { id: 'expense', label: 'Expense (Cr)' },
+               { id: 'profit', label: 'Profit (Cr)' },
+               { id: 'assets', label: 'Assets (Cr)' },
+               { id: 'networth', label: 'Net Worth (Cr)' }
+             ];
+          }
+          const hasReserves = data.financialTable.some((r: any) => r.reserves);
+          const hasBorrowing = data.financialTable.some((r: any) => r.borrowing);
+          
+          if (hasReserves && !newData.financialTable.columns.find((c:any) => c.id === 'reserves')) {
+            newData.financialTable.columns.push({ id: 'reserves', label: 'Reserves (Cr)' });
+          }
+          if (hasBorrowing && !newData.financialTable.columns.find((c:any) => c.id === 'borrowing')) {
+            newData.financialTable.columns.push({ id: 'borrowing', label: 'Borrowing (Cr)' });
+          }
+
+          newData.financialTable.rows = data.financialTable.map((row: any, i: number) => ({
+             id: `row_${Date.now()}_${i}`,
+             values: {
+                year: row.year || '',
+                revenue: row.revenue || row.totalIncome || '',
+                expense: row.expense || '',
+                profit: row.profit || '',
+                assets: row.assets || '',
+                networth: row.networth || '',
+                ...(hasReserves && { reserves: row.reserves || '' }),
+                ...(hasBorrowing && { borrowing: row.borrowing || '' })
+             }
+          }));
+        }
+
+        if (data.valuationMetrics) {
+          newData.valuationFields = [...(newData.valuationFields || [])].map(item => ({...item}));
+          data.valuationMetrics.forEach((ef: any) => {
+             const searchLabel = ef.label.toLowerCase();
+             const valIdx = newData.valuationFields!.findIndex((f: any) => searchLabel.includes(f.label.toLowerCase().replace(/ \(.+\)/, '')) || f.label.toLowerCase().includes(searchLabel));
+             if (valIdx !== -1) { 
+               newData.valuationFields![valIdx].value = String(ef.value); 
+             } else {
+               newData.valuationFields!.push({ id: `val_${Date.now()}_${Math.random()}`, label: ef.label, value: String(ef.value) });
+             }
+          });
+        }
+
+        if (data.subscriptionStatus) {
+          newData.subscriptionFields = [...(newData.subscriptionFields || [])].map(item => ({...item}));
+          data.subscriptionStatus.forEach((ef: any) => {
+             const searchLabel = ef.label.toLowerCase();
+             const subIdx = newData.subscriptionFields!.findIndex((f: any) => searchLabel.includes(f.label.toLowerCase().replace(' sub', '')) || f.label.toLowerCase().includes(searchLabel));
+             if (subIdx !== -1) { 
+               newData.subscriptionFields![subIdx].value = String(ef.value); 
+             } else {
+               newData.subscriptionFields!.push({ id: `sub_${Date.now()}_${Math.random()}`, label: ef.label, value: String(ef.value) });
+             }
+          });
+        }
+
+        if (data.quotaPercentages) {
+          newData.quotaFields = [...(newData.quotaFields || [])].map(item => ({...item}));
+          data.quotaPercentages.forEach((ef: any) => {
+             const searchLabel = ef.label.toLowerCase();
+             const qIdx = newData.quotaFields!.findIndex((f: any) => searchLabel.includes(f.label.toLowerCase().replace(' quota', '')) || f.label.toLowerCase().includes(searchLabel));
+             if (qIdx !== -1) { 
+               newData.quotaFields![qIdx].value = String(ef.value); 
+             } else {
+               newData.quotaFields!.push({ id: `quota_${Date.now()}_${Math.random()}`, label: ef.label, value: String(ef.value) });
+             }
+          });
+        }
+
+        if (data.additionalData && data.additionalData.length > 0) {
+          const extraTabId = 'extra-data';
+          if (!newData.customTabs) newData.customTabs = [];
+          let tabIndex = newData.customTabs.findIndex((t: any) => t.id === extraTabId);
+          if (tabIndex === -1) {
+            newData.customTabs.push({ id: extraTabId, name: 'Others', fields: [] });
+            tabIndex = newData.customTabs.length - 1;
+          }
+          
+          data.additionalData.forEach((ad: any) => {
+            newData.customTabs![tabIndex].fields.push({
+              id: generateSlug(ad.title) + Math.random().toString(36).substring(7),
+              name: ad.title,
+              value: String(ad.content),
+              type: 'textarea'
+            });
+          });
+        }
+
+        if (data.analysis) {
+          newData.analysis = {
+            verdict: data.analysis.verdict || '',
+            reasoning: data.analysis.reasoning || ''
+          };
+        }
+
+        if (data.registrar) {
+          newData.registrar = { ...data.registrar };
+        }
+        
+        if (data.contact) {
+          newData.contact = { ...data.contact };
+        }
+
+        if (data.leadManagers) {
+          newData.leadManagers = [...data.leadManagers];
+        }
+
+        return newData;
+      });
+
+      alert("Successfully generated IPO data by AI!");
+    } catch (error: any) {
+      console.error(error);
+      alert("Failed to fetch IPO data: " + error.message);
+    } finally {
+      setIsFetchingData(false);
     }
   };
 
@@ -195,6 +504,7 @@ export default function CreateIPOForm() {
                     style={{ fontSize: '0.75rem', padding: '0.1rem 0.3rem', borderRadius: '4px', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-color)' }}
                   >
                     <option value="text">Text (Rich)</option>
+                    <option value="textarea">Textarea (Plain)</option>
                     <option value="number">Number</option>
                     <option value="date">Date</option>
                     <option value="url">URL</option>
@@ -204,6 +514,8 @@ export default function CreateIPOForm() {
                   <div style={{ flex: 1 }}>
                     {(!field.type || field.type === 'text') ? (
                       <RichTextEditor value={field.value} onChange={(val) => handleCustomFieldUpdate(tabId, field.id, 'value', val)} />
+                    ) : field.type === 'textarea' ? (
+                      <textarea rows={5} value={field.value} onChange={(e) => handleCustomFieldUpdate(tabId, field.id, 'value', e.target.value)} className={styles.inputField} />
                     ) : (
                       <input type={field.type} value={field.value} onChange={(e) => handleCustomFieldUpdate(tabId, field.id, 'value', e.target.value)} className={styles.inputField} />
                     )}
@@ -479,7 +791,9 @@ export default function CreateIPOForm() {
           <button type="button" onClick={() => setActiveTab('subscription')} style={getTabStyle('subscription')}>Subscription & Quota</button>
           <button type="button" onClick={() => setActiveTab('financials')} style={getTabStyle('financials')}>Financials</button>
           <button type="button" onClick={() => setActiveTab('affiliate')} style={getTabStyle('affiliate')}>Affiliate</button>
-          {formData.customTabs?.filter(t => !['general', 'timeline', 'price', 'subscription', 'financials', 'affiliate'].includes(t.id)).map((tab, idx, arr) => (
+          <button type="button" onClick={() => setActiveTab('contact')} style={getTabStyle('contact')}>Registrar & Contact</button>
+          <button type="button" onClick={() => setActiveTab('faqs')} style={getTabStyle('faqs')}>FAQs</button>
+          {formData.customTabs?.filter(t => !['general', 'timeline', 'price', 'subscription', 'financials', 'affiliate', 'contact', 'faqs'].includes(t.id)).map((tab, idx, arr) => (
             <div key={tab.id} style={{ display: 'flex', alignItems: 'center' }}>
               <button type="button" onClick={() => setActiveTab(tab.id)} style={getTabStyle(tab.id)}>{tab.name}</button>
               {activeTab === tab.id && (
@@ -499,6 +813,51 @@ export default function CreateIPOForm() {
           {activeTab === 'general' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className={styles.inputGroup} style={{ gridColumn: '1 / -1', background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899)' }}></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: '300px' }}>
+                      <label style={{ color: '#8b5cf6', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        ✨ Generate IPO by AI
+                      </label>
+                      <input 
+                        name="chittorgarhUrl" 
+                        value={chittorgarhUrl} 
+                        onChange={(e) => setChittorgarhUrl(e.target.value)} 
+                        placeholder="Paste Chittorgarh IPO URL here (e.g. https://www.chittorgarh.com/ipo/...)" 
+                        className={styles.inputField}
+                        style={{ border: '1px solid #8b5cf655' }}
+                      />
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={handleFetchChittorgarh}
+                      disabled={isFetchingData || !chittorgarhUrl}
+                      style={{ 
+                        background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', 
+                        border: 'none', 
+                        color: 'white', 
+                        padding: '0.75rem 1.5rem', 
+                        borderRadius: '8px', 
+                        cursor: isFetchingData || !chittorgarhUrl ? 'not-allowed' : 'pointer',
+                        fontSize: '0.95rem',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        opacity: isFetchingData || !chittorgarhUrl ? 0.7 : 1,
+                        whiteSpace: 'nowrap',
+                        height: '42px'
+                      }}
+                    >
+                      {isFetchingData ? "Generating..." : "Generate by AI"}
+                    </button>
+                  </div>
+                  <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Paste the Chittorgarh IPO link and AI will automatically fill the form fields and extract custom data!
+                  </p>
+                </div>
+
                 <div className={styles.inputGroup}>
                   <label>Company Name</label>
                   <input required name="name" value={formData.name} onChange={handleChange} className={styles.inputField} />
@@ -589,10 +948,54 @@ export default function CreateIPOForm() {
                     <option value={IPOStatus.LISTED}>Listed</option>
                   </select>
                 </div>
+                <div className={styles.inputGroup} style={{ gridColumn: '1 / -1', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>AI Suggestion (Auto-generated)</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+                    <div>
+                      <label>AI Verdict</label>
+                      <select 
+                        value={formData.analysis?.verdict || ''} 
+                        onChange={(e) => setFormData(prev => ({ ...prev, analysis: { ...prev.analysis, verdict: e.target.value, reasoning: prev.analysis?.reasoning || '' } }))} 
+                        className={styles.inputField}
+                      >
+                        <option value="">None</option>
+                        <option value="Apply">Apply</option>
+                        <option value="Moderate Risk">Moderate Risk</option>
+                        <option value="Avoid">Avoid</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label>AI Reasoning</label>
+                      <textarea 
+                        value={formData.analysis?.reasoning || ''} 
+                        onChange={(e) => setFormData(prev => ({ ...prev, analysis: { ...prev.analysis, reasoning: e.target.value, verdict: prev.analysis?.verdict || '' } }))} 
+                        className={styles.inputField} 
+                        rows={2} 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+                <label>Description (About IPO)</label>
+                <RichTextEditor value={formData.aboutIpo || ''} onChange={(val) => setFormData(prev => ({ ...prev, aboutIpo: val }))} />
               </div>
               <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
                 <label>Description (About Company)</label>
                 <RichTextEditor value={formData.description} onChange={(val) => setFormData(prev => ({ ...prev, description: val }))} />
+              </div>
+              <div className={styles.sectionCard} style={{ padding: '1.5rem', background: 'transparent' }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: 'var(--text-color)' }}>Objects of the Issue</h3>
+                <div className={styles.inputGroup}>
+                  <label>Reasons for the IPO (One per line)</label>
+                  <textarea 
+                    rows={4} 
+                    value={formData.objectsOfTheIssue?.join('\n') || ''} 
+                    onChange={(e) => setFormData(prev => ({ ...prev, objectsOfTheIssue: e.target.value.split('\n').map(s => s.trim()).filter(Boolean) }))} 
+                    className={styles.inputField} 
+                    placeholder="e.g. Repayment of borrowings&#10;General corporate purposes"
+                  />
+                </div>
               </div>
               {renderCustomFields('general')}
             </div>
@@ -791,44 +1194,71 @@ export default function CreateIPOForm() {
                 </button>
               </div>
 
-              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-color)', margin: '0' }}>Financial Records Columns</h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                {formData.financialTable?.columns.map((col, idx) => (
-                  <div key={col.id} style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden' }}>
-                    <input 
-                      value={col.label} 
-                      onChange={(e) => updateFinancialColumn(idx, e.target.value)}
-                      style={{ border: 'none', background: 'transparent', padding: '0.5rem', color: 'var(--text-color)', width: '120px' }}
-                    />
-                    <button type="button" onClick={() => removeFinancialColumn(idx)} style={{ background: 'none', border: 'none', borderLeft: '1px solid var(--border-color)', color: '#ef4444', padding: '0.5rem', cursor: 'pointer' }}><Trash size={14}/></button>
-                  </div>
-                ))}
-                <button type="button" onClick={addFinancialColumn} style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-color)', borderRadius: '6px', padding: '0.5rem 1rem', cursor: 'pointer', color: 'var(--icon-color)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <Plus size={14} /> Add Column
-                </button>
+              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-color)', margin: '0 0 1rem 0' }}>Financial Records Data</h3>
+              <div style={{ overflowX: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '1rem', background: 'var(--card-bg)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <th style={{ padding: '0.5rem' }}>Period Ended / Attributes</th>
+                      {formData.financialTable?.rows.map((row, rowIdx) => (
+                        <th key={row.id} style={{ padding: '0.5rem', minWidth: '150px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <input 
+                              placeholder="Year (e.g. 31 Mar 2026)"
+                              value={row.values['year'] || ''} 
+                              onChange={(e) => updateFinancialCell(rowIdx, 'year', e.target.value)} 
+                              className={styles.inputField} 
+                            />
+                            <button type="button" onClick={() => removeFinancialRow(rowIdx)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}><Trash size={16}/></button>
+                          </div>
+                        </th>
+                      ))}
+                      <th style={{ padding: '0.5rem' }}>
+                        <button type="button" onClick={addFinancialRow} style={{ background: 'var(--primary-color)', color: 'white', border: 'none', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
+                          <Plus size={14}/> Add Year
+                        </button>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.financialTable?.columns.filter(c => c.id !== 'year').map((col) => {
+                      const realColIdx = formData.financialTable!.columns.findIndex(c => c.id === col.id);
+                      return (
+                      <tr key={col.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                        <td style={{ padding: '0.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <input 
+                              value={col.label} 
+                              onChange={(e) => updateFinancialColumn(realColIdx, e.target.value)}
+                              className={styles.inputField} 
+                              placeholder="Attribute Name"
+                            />
+                            <button type="button" onClick={() => removeFinancialColumn(realColIdx)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}><Trash size={14}/></button>
+                          </div>
+                        </td>
+                        {formData.financialTable!.rows.map((row, rowIdx) => (
+                          <td key={`${col.id}_${row.id}`} style={{ padding: '0.5rem' }}>
+                            <input 
+                              value={row.values[col.id] || ''} 
+                              onChange={(e) => updateFinancialCell(rowIdx, col.id, e.target.value)} 
+                              className={styles.inputField} 
+                            />
+                          </td>
+                        ))}
+                        <td style={{ padding: '0.5rem' }}></td>
+                      </tr>
+                    )})}
+                    <tr>
+                      <td style={{ padding: '0.5rem', paddingTop: '1rem' }}>
+                        <button type="button" onClick={addFinancialColumn} style={{ background: 'var(--bg-secondary)', border: '1px dashed var(--border-color)', color: 'var(--icon-color)', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', width: '100%', justifyContent: 'center' }}>
+                          <Plus size={14}/> Add Attribute
+                        </button>
+                      </td>
+                      <td colSpan={(formData.financialTable?.rows.length || 0) + 1}></td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-
-              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-color)', margin: '0' }}>Financial Records Data</h3>
-              {formData.financialTable?.rows.map((row, rowIdx) => (
-                <div key={row.id} style={{ border: '1px solid var(--border-color)', padding: '1rem', borderRadius: '8px', background: 'var(--bg-secondary)', position: 'relative', marginBottom: '1rem' }}>
-                  <button type="button" onClick={() => removeFinancialRow(rowIdx)} style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}><Trash size={16} /></button>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '1rem' }}>
-                    {formData.financialTable?.columns.map(col => (
-                      <div key={col.id} className={styles.inputGroup}>
-                        <label style={{fontSize: '0.8rem'}}>{col.label}</label>
-                        <input 
-                          value={row.values[col.id] || ''} 
-                          onChange={(e) => updateFinancialCell(rowIdx, col.id, e.target.value)} 
-                          className={styles.inputField} 
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              <button type="button" onClick={addFinancialRow} style={{ background: 'none', border: '1px dashed var(--border-color)', padding: '1rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', color: '#60a5fa', width: '100%' }}>
-                <Plus size={18} /> Add Financial Year
-              </button>
               {renderCustomFields('financials')}
             </div>
           )}
@@ -843,7 +1273,127 @@ export default function CreateIPOForm() {
             </div>
           )}
 
-          {!['general', 'timeline', 'price', 'financials', 'affiliate'].includes(activeTab) && (
+          {activeTab === 'contact' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className={styles.sectionCard} style={{ padding: '1.5rem', background: 'transparent' }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: 'var(--text-color)' }}>IPO Registrar</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className={styles.inputGroup}>
+                    <label>Name</label>
+                    <input value={formData.registrar?.name || ''} onChange={(e) => handleNestedChange('registrar', 'name', e.target.value)} className={styles.inputField} />
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label>Phone</label>
+                    <input value={formData.registrar?.phone || ''} onChange={(e) => handleNestedChange('registrar', 'phone', e.target.value)} className={styles.inputField} />
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label>Email</label>
+                    <input type="email" value={formData.registrar?.email || ''} onChange={(e) => handleNestedChange('registrar', 'email', e.target.value)} className={styles.inputField} />
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label>Website</label>
+                    <input type="url" value={formData.registrar?.website || ''} onChange={(e) => handleNestedChange('registrar', 'website', e.target.value)} className={styles.inputField} />
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.sectionCard} style={{ padding: '1.5rem', background: 'transparent' }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: 'var(--text-color)' }}>Company Contact Details</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className={styles.inputGroup} style={{ gridColumn: '1 / -1' }}>
+                    <label>Address</label>
+                    <textarea rows={3} value={formData.contact?.address || ''} onChange={(e) => handleNestedChange('contact', 'address', e.target.value)} className={styles.inputField} />
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label>Phone</label>
+                    <input value={formData.contact?.phone || ''} onChange={(e) => handleNestedChange('contact', 'phone', e.target.value)} className={styles.inputField} />
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label>Email</label>
+                    <input type="email" value={formData.contact?.email || ''} onChange={(e) => handleNestedChange('contact', 'email', e.target.value)} className={styles.inputField} />
+                  </div>
+                  <div className={styles.inputGroup}>
+                    <label>Website</label>
+                    <input type="url" value={formData.contact?.website || ''} onChange={(e) => handleNestedChange('contact', 'website', e.target.value)} className={styles.inputField} />
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.sectionCard} style={{ padding: '1.5rem', background: 'transparent' }}>
+                <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: 'var(--text-color)' }}>Lead Managers</h3>
+                <div className={styles.inputGroup}>
+                  <label>Managers (Comma-separated)</label>
+                  <textarea 
+                    rows={4} 
+                    value={formData.leadManagers?.join(', ') || ''} 
+                    onChange={(e) => setFormData(prev => ({ ...prev, leadManagers: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))} 
+                    className={styles.inputField} 
+                    placeholder="e.g. ICICI Securities, HSBC Securities..."
+                  />
+                </div>
+              </div>
+              
+              {renderCustomFields('contact')}
+            </div>
+          )}
+
+          {activeTab === 'faqs' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className={styles.sectionCard} style={{ padding: '1.5rem', background: 'transparent' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-color)' }}>Frequently Asked Questions</h3>
+                  <button type="button" onClick={() => setFormData(prev => ({ ...prev, faqs: [...(prev.faqs || []), { question: '', answer: '' }] }))} style={{ background: 'none', border: '1px solid var(--border-color)', padding: '0.4rem 0.8rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--text-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Plus size={14} /> Add FAQ
+                  </button>
+                </div>
+                
+                {(!formData.faqs || formData.faqs.length === 0) ? (
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>No FAQs added yet.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {formData.faqs.map((faq, index) => (
+                      <div key={index} style={{ padding: '1rem', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--border-color)', position: 'relative' }}>
+                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, faqs: prev.faqs?.filter((_, i) => i !== index) }))} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                          <Trash size={16} />
+                        </button>
+                        <div className={styles.inputGroup} style={{ marginBottom: '1rem', paddingRight: '2rem' }}>
+                          <label>Question</label>
+                          <input 
+                            value={faq.question} 
+                            onChange={(e) => {
+                              const newFaqs = [...(formData.faqs || [])];
+                              newFaqs[index].question = e.target.value;
+                              setFormData(prev => ({ ...prev, faqs: newFaqs }));
+                            }} 
+                            className={styles.inputField} 
+                            placeholder="e.g. What is the minimum lot size?"
+                          />
+                        </div>
+                        <div className={styles.inputGroup}>
+                          <label>Answer</label>
+                          <textarea 
+                            rows={3} 
+                            value={faq.answer} 
+                            onChange={(e) => {
+                              const newFaqs = [...(formData.faqs || [])];
+                              newFaqs[index].answer = e.target.value;
+                              setFormData(prev => ({ ...prev, faqs: newFaqs }));
+                            }} 
+                            className={styles.inputField} 
+                            placeholder="e.g. The minimum lot size is 66 shares."
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              {renderCustomFields('faqs')}
+            </div>
+          )}
+
+          {!['general', 'timeline', 'price', 'subscription', 'financials', 'affiliate', 'contact', 'faqs'].includes(activeTab) && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {renderCustomFields(activeTab)}
             </div>

@@ -151,6 +151,16 @@ export async function GET() {
       });
     } catch (e) { console.error("Sitemap Pages Error", e); }
 
+    // 7. Fetch Authors
+    try {
+      const authorsSnap = await getDocs(collection(db, 'news_authors'));
+      authorsSnap.forEach(doc => {
+        const data = doc.data();
+        const urlIdentifier = data.username || doc.id;
+        addUrl(`/author/${urlIdentifier}`, '0.8', 'monthly', undefined, now);
+      });
+    } catch (e) { console.error("Sitemap Authors Error", e); }
+
     xml += `</urlset>`;
 
     return new NextResponse(xml, {

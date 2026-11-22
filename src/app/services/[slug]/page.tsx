@@ -56,6 +56,28 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
+function deepSerialize(obj: any): any {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+  if (typeof obj.toDate === 'function') {
+    return obj.toDate().toISOString();
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(deepSerialize);
+  }
+  const serialized: any = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      serialized[key] = deepSerialize(obj[key]);
+    }
+  }
+  return serialized;
+}
+
 export default async function PublicServiceDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   let serviceData: any = null;
@@ -65,12 +87,13 @@ export default async function PublicServiceDetailsPage({ params }: { params: Pro
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-      serviceData = querySnapshot.docs[0].data();
+      const docSnap = querySnapshot.docs[0];
+      serviceData = { id: docSnap.id, ...docSnap.data() };
     } else {
       const fallbackRef = doc(db, "services", slug);
       const docSnap = await getDoc(fallbackRef);
       if (docSnap.exists()) {
-        serviceData = docSnap.data();
+        serviceData = { id: docSnap.id, ...docSnap.data() };
       }
     }
   } catch (error) {
@@ -106,7 +129,7 @@ export default async function PublicServiceDetailsPage({ params }: { params: Pro
       {serviceData?.customSchema && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serviceData.customSchema }} />
       )}
-      <ServiceDetails initialService={null} initialComboDetails={[]} />
+      <ServiceDetails initialService={serviceData ? deepSerialize(serviceData) : null} initialComboDetails={[]} />
     </>
   );
 }

@@ -48,7 +48,7 @@ export default function ToolsPage() {
 
   return (
     <>
-      <ToolHeader toolSlug="income-tax-calculator" />
+      <ToolHeader toolSlug="income-tax-calculator" initialTitle="Income Tax Calculator" />
       <div className={styles.container}>
         <div className={styles.contentWrapper}>
         <div className={styles.calculatorWrapper}>

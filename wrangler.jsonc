@@ -1,14 +1,11 @@
 {
   "name": "netprofit",
   "main": ".open-next/worker.js",
-<<<<<<< HEAD
   "compatibility_date": "2024-09-23",
   "compatibility_flags": [
     "nodejs_compat",
     "allow_eval_during_startup"
   ],
-=======
->>>>>>> 9c339c352cb7c2baa97cb98ddc23abe476d3d0d7
   "assets": {
     "directory": ".open-next",
     "binding": "ASSETS"

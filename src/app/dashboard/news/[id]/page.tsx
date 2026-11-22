@@ -73,61 +73,58 @@ export default function DashboardNewsDetailsPage() {
   if (!news) return null;
 
   return (
-    <div className={styles.container} style={{ minHeight: 'auto' }}>
-      <div className={styles.hero} style={{ borderRadius: '8px', padding: '2rem' }}>
-        <div className={styles.heroContent} style={{ maxWidth: '100%' }}>
-          <Link href="/dashboard/news" className={styles.backLink}>
-            <ArrowLeft size={16} /> Back to News
-          </Link>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-            {news.categories && news.categories.length > 0 
-              ? news.categories.map((cat: string) => (
-                  <span key={cat} className={styles.categoryBadge}>{cat}</span>
-                ))
-              : (
-                  <span className={styles.categoryBadge}>{news.category || 'Uncategorized'}</span>
-                )
-            }
-          </div>
-          <h1 className={styles.title} style={{ fontSize: '2rem' }}>{news.title}</h1>
-          <p className={styles.date}>
-            {news.date ? (typeof news.date === 'string' ? news.date : (typeof news.date.toDate === 'function' ? news.date.toDate().toLocaleDateString() : (news.date.seconds ? new Date(news.date.seconds * 1000).toLocaleDateString() : 'Unknown Date'))) : 'Unknown Date'}
-          </p>
-          {news.tags && news.tags.length > 0 && (
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
-              {news.tags.map((tag: string) => (
-                <span key={tag} className={styles.tagBadge}>#{tag}</span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className={styles.contentWrapper} style={{ maxWidth: '100%', padding: '0', marginTop: '2rem' }}>
+    <div style={{ padding: '0.5rem' }}>
+      <Link href="/dashboard/news" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', textDecoration: 'none', marginBottom: '2rem', fontWeight: 500 }}>
+        <ArrowLeft size={16} /> Back to News
+      </Link>
+      
+      <div className="cleartax-card" style={{ padding: '2rem', backgroundColor: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
         {news.imageUrl && (
-          <div className={styles.imageContainer}>
-            <img src={news.imageUrl} alt={news.title} className={styles.coverImage} />
+          <div style={{ width: '100%', marginBottom: '2rem', borderRadius: '8px', overflow: 'hidden' }}>
+            <img src={news.imageUrl} alt={news.title} style={{ width: '100%', maxHeight: '450px', objectFit: 'cover', display: 'block' }} />
           </div>
         )}
-        <div className={styles.articleBody} dangerouslySetInnerHTML={{ __html: news.content.replace(/http:\/\//gi, 'https://') }} />
+
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+          {news.categories && news.categories.length > 0 
+            ? news.categories.map((cat: string) => (
+                <span key={cat} style={{ background: 'var(--accent-color)', color: '#fff', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase' }}>{cat}</span>
+              ))
+            : (
+                <span style={{ background: 'var(--accent-color)', color: '#fff', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase' }}>{news.category || 'Uncategorized'}</span>
+              )
+          }
+        </div>
+
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-color)', marginBottom: '0.5rem', lineHeight: 1.2 }}>{news.title}</h1>
+        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontWeight: 500 }}>
+          {news.date ? (typeof news.date === 'string' ? news.date : (typeof news.date.toDate === 'function' ? news.date.toDate().toLocaleDateString() : (news.date.seconds ? new Date(news.date.seconds * 1000).toLocaleDateString() : 'Unknown Date'))) : 'Unknown Date'}
+        </p>
+
+        <div className="articleContent" style={{ color: 'var(--text-color)', lineHeight: 1.8, fontSize: '1.05rem' }} dangerouslySetInnerHTML={{ __html: news.content ? news.content.replace(/<h1([^>]*)>([\s\S]*?)<\/h1>/gi, '<h2$1>$2</h2>').replace(/http:\/\//gi, 'https://') : '' }} />
+
+        {news.tags && news.tags.length > 0 && (
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
+            {news.tags.map((tag: string) => (
+              <span key={tag} style={{ background: 'var(--bg-secondary)', color: 'var(--text-color)', padding: '0.35rem 0.75rem', borderRadius: '4px', fontSize: '0.85rem' }}>#{tag}</span>
+            ))}
+          </div>
+        )}
       </div>
 
       {relatedNews.length > 0 && (
-        <div className={styles.relatedSection} style={{ maxWidth: '100%', padding: '0', marginTop: '3rem' }}>
-          <h2 className={styles.relatedTitle}>Related News</h2>
-          <div className={styles.relatedGrid}>
+        <div style={{ marginTop: '3rem' }}>
+          <h2 style={{ fontSize: '1.5rem', color: 'var(--text-color)', marginBottom: '1.5rem', fontWeight: 700 }}>Related News</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
             {relatedNews.map(n => (
-              <Link href={`/dashboard/news/${n.slug || n.id}`} key={n.id} className={styles.relatedCard}>
+              <Link href={`/dashboard/news/${n.slug || n.id}`} key={n.id} style={{ textDecoration: 'none', background: 'var(--card-bg)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
                 {n.imageUrl ? (
-                  <div className={styles.relatedImage} style={{ backgroundImage: `url(${n.imageUrl})` }} />
+                  <div style={{ height: '160px', backgroundImage: `url(${n.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                 ) : (
-                  <div className={styles.relatedImagePlaceholder}>No Image</div>
+                  <div style={{ height: '160px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>No Image</div>
                 )}
-                <div className={styles.relatedContent}>
-                  <div className={styles.relatedCategory} style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
-                    {(n.categories && n.categories.length > 0) ? n.categories.map((cat: string) => <span key={cat}>{cat}</span>) : <span>{n.category || 'Uncategorized'}</span>}
-                  </div>
-                  <h3 className={styles.relatedCardTitle}>{n.title}</h3>
+                <div style={{ padding: '1.25rem' }}>
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--text-color)', fontWeight: 700, margin: 0, lineHeight: 1.4 }}>{n.title}</h3>
                 </div>
               </Link>
             ))}

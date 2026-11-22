@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import styles from "../page.module.css";
+import Loader from "../../../../src/components/Loader";
 import { db } from "../../../../src/lib/firebase";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
@@ -134,7 +135,11 @@ export default function RevenueDashboard() {
   };
 
   if (loading) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading dashboard...</div>;
+    return (
+      <div style={{ display: 'flex', minHeight: '50vh', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader text="Loading dashboard..." />
+      </div>
+    );
   }
 
   return (

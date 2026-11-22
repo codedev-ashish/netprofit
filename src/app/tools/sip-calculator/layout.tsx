@@ -1,18 +1,34 @@
-import { Metadata } from 'next';
+import { Metadata } from "next";
+import { collection, query, where, getDocs, limit } from "firebase/firestore";
+import { db } from "../../../lib/firebase";
 
-export const metadata: Metadata = {
-  title: {
-    absolute: "SIP Calculator | Free Financial Calculators | NetProfit"
-  },
-  description: "Use our free SIP Calculator to quickly and accurately calculate your financial and business metrics. Expert tools by NetProfit."
-};
+export const revalidate = 3600;
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export async function generateMetadata(): Promise<Metadata> {
+  let title = "Tool";
+  try {
+    const q = query(collection(db, "tools"), where("slug", "==", "sip-calculator"), limit(1));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      title = snapshot.docs[0].data().name || title;
+    }
+  } catch (err) {}
+  return { title: { absolute: `${title} | Free Financial Calculators | NetProfit` } };
+}
+
+export default async function Layout({ children }: { children: React.ReactNode }) {
+  let title = "Tool";
+  try {
+    const q = query(collection(db, "tools"), where("slug", "==", "sip-calculator"), limit(1));
+    const snapshot = await getDocs(q);
+    if (!snapshot.empty) {
+      title = snapshot.docs[0].data().name || title;
+    }
+  } catch (err) {}
+
   return (
     <>
-      <div style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', borderWidth: 0 }}>
-        <h1>SIP Calculator</h1>
-      </div>
+      
       {children}
     </>
   );
